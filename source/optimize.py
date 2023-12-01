@@ -160,7 +160,7 @@ class optimize( C.compile ):
                 if i == j:                          # a statement can't depend on itself
                     continue
 
-                # print self.__depends(si[1][0], sj[1][0]), si[1][0], sj[1][0]
+                # print((self.__depends(si[1][0], sj[1][0]), si[1][0], sj[1][0]))
                 if self.__depends(si[1][0], sj[1][0]):
                     G.add_edge( sj[0], si[0])       # if j depends on i, then add an edge
 
@@ -373,7 +373,7 @@ class optimize( C.compile ):
 
         dbg_prnt(DBG_LVL_2, 'Optimized IR:')
 
-        for pc, group in self.__ir:                 # print optimized IR
+        for pc, group in self.__ir:                 # print((optimized IR))
             dbg_prnt(DBG_LVL_2, '%s %s %s' % ('-'*32, pc, '-'*32))
             
             for stmt in group:
@@ -428,7 +428,7 @@ class optimize( C.compile ):
                                 if len(val) != 8:
                                     for i in range(0, len(val), 8):
                                         opt += 'num %s ' % val[i:i+8].encode("hex")
-                                        print val[i:i+8],val[i:i+8].encode("hex")
+                                        print((val[i:i+8],val[i:i+8].encode("hex")))
                                 else:
                                     opt += 'num %s ' % val.encode("hex")
                     # -------------------------------------------------------------------
@@ -478,7 +478,7 @@ class optimize( C.compile ):
            
             dbg_prnt(DBG_LVL_1, "Done. SPL IR saved as %s" % filename + '.ir')
 
-        except IOError, err:
+        except IOError as err:
             fatal("Cannot create file: %s" % str(err))    
 
 # -------------------------------------------------------------------------------------------------

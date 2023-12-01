@@ -847,11 +847,11 @@ class compile( object ):
         # it will be 1. Otherwise it's 0. Note that this is a soft error. Execution doesn't
         # halt when checks fails.
         #        
-        for reg, used in treg.iteritems():
+        for reg, used in treg.items():
             if not used:
                self.__sem_warn("Register '__r%d' is unused" % reg)
 
-        for var, used in tvar.iteritems():
+        for var, used in tvar.items():
             if not used:
                 self.__sem_warn("Variable '%s' is unused" % var)
 

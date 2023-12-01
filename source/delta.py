@@ -223,9 +223,9 @@ class delta( P._cs_ksp_intrl ):
 
             nxt = self.__node_groups[depth][1][n]
 
-            #print self.__uid[depth], (cur, nxt)
-            #print self.__adj[ uid ]
-            #print self.__radj[ self.__uid[depth] ]
+            #print((self.__uid[depth], (cur, nxt)))
+            #print((self.__adj[ uid ]))
+            #print((self.__radj[ self.__uid[depth] ]))
 
             discard = False
 
@@ -338,9 +338,9 @@ class delta( P._cs_ksp_intrl ):
         adj[ 14 ] = [6, 8]
 
         # self.__G.node['C']['avoid'] = 1
-        print self.__G.edges()  
-        print accepted
-        print adj
+        print((self.__G.edges()  ))
+        print((accepted))
+        print((adj))
 
         self.__entry = 'e'
         self.__adj   = adj                          # store adjacency list
@@ -375,7 +375,7 @@ class delta( P._cs_ksp_intrl ):
         # build the reverse adjacency list
         self.__radj = { }
 
-        for a, b in self.__adj.iteritems():
+        for a, b in self.__adj.items():
             for c in b:
                 self.__radj.setdefault(c, []).append(a)
 
@@ -390,7 +390,7 @@ class delta( P._cs_ksp_intrl ):
             raise Exception('Entry point not found')
 
 
-        # for _, nxt in sorted(accepted.iteritems()):   # for each next level
+        # for _, nxt in sorted(accepted.items()):   # for each next level
         for uid, cur in accepted:                   # for each next level
 
             # if any node is not a valid basic block address, abort
@@ -435,7 +435,7 @@ class delta( P._cs_ksp_intrl ):
 
                 # fully connect nodes from current to the next level (quadratic complexity)
                 for c in cur:                           # for each node in current level
-                    # print '-------------------------------------'
+                    # print(('-------------------------------------'))
                     
                     # find paths to all nodes in the next level        
                     cfg = P._cfg_shortest_path(graph, clobbering, adj)
@@ -449,7 +449,7 @@ class delta( P._cs_ksp_intrl ):
                         continue
 
 
-                    # print '======================================='
+                    # print(('======================================='))
                     for n in range(len(nxt_set)):       # for each node in the next level
                         # add an edge with cost their distance in CFG (or INF if edge does not exist)
 
@@ -511,7 +511,7 @@ class delta( P._cs_ksp_intrl ):
 
         for a, nxt in accepted:                     # for each next level
 
-            print 'nxt', cur, nxt, a
+            print(('nxt', cur, nxt, a))
             # if any node is not a valid basic block address, abort
             if len(filter(lambda n : n not in ADDR2NODE, nxt)): 
                 raise Exception('Node is not a valid address')
@@ -522,9 +522,9 @@ class delta( P._cs_ksp_intrl ):
             for c in cur:                           # for each node in current level
 
 
-                print '-------------------------------------'
+                print(('-------------------------------------'))
                 path = cfg.shortest_path(c, nxt)    # find paths to all nodes in the next level
-                print '======================================='
+                print(('======================================='))
                 for n in range(len(nxt)):           # for each node in the next level
                     # add an edge with cost their distance in CFG (or INF if edge does not exist)
 
@@ -548,7 +548,7 @@ class delta( P._cs_ksp_intrl ):
 
         # at this point we have built delta graph
 
-        # print self.__d.edges(data=True)
+        # print((self.__d.edges(data=True)))
 
         dbg_prnt(DBG_LVL_1, "Delta graph created")
         dbg_prnt(DBG_LVL_3, "Edges:")
@@ -564,7 +564,7 @@ class delta( P._cs_ksp_intrl ):
         self.graph = self.__d
 
         # for n in self.__G.nodes():
-        #     print hex(n)
+        #     print((hex(n)))
         # exit()
         
 
@@ -609,7 +609,7 @@ class delta( P._cs_ksp_intrl ):
         # build the reverse adjacency list
         self.__radj = { }
 
-        for a, b in self.__adj.iteritems():
+        for a, b in self.__adj.items():
             for c in b:
                 self.__radj.setdefault(c, []).append(a)
 
@@ -635,7 +635,7 @@ class delta( P._cs_ksp_intrl ):
 
 
         for obj in reversed(inv):                   # yield objects in reverse order
-            # print 'Inverse', obj.tw, obj.Hk.edges(data=True)
+            # print(('Inverse', obj.tw, obj.Hk.edges(data=True)))
 
             if obj.tw != INFINITY:
                 none = False
@@ -654,7 +654,7 @@ class delta( P._cs_ksp_intrl ):
     # :Arg graph: The induced subgraph
     # :Arg P: Current path
     # :Arg __visited: Current set of visited nodes
-    # :Arg F: Lambda function to encode nodes in P (needed for pretty-print situations)
+    # :Arg F: Lambda function to encode nodes in P (needed for pretty-print((situations)))
     # :Ret: P!
     #
     def __enum_paths( self, curr, graph, P, __visited, F=lambda x: x ):
@@ -673,13 +673,13 @@ class delta( P._cs_ksp_intrl ):
         elif len(graph.neighbors(curr)) == 2:
             n1, n2 = graph.neighbors(curr)
             
-            # print n1, n2, self.__adj[curr[0]] 
+            # print((n1, n2, self.__adj[curr[0]] ))
 
             Q = self.__enum_paths(n1, graph, [(curr[0], F(curr[1]), F(n1[1]))], __visited+[curr], F)
             R = self.__enum_paths(n2, graph, [(curr[0], F(curr[1]), F(n2[1]))], __visited+[curr], F)
 
-            # print 'Q IS', Q
-            # print 'R IS', R
+            # print(('Q IS', Q))
+            # print(('R IS', R))
 
             # check if Q or R is the "taken" branch
             # in adj the taken branch is always first
@@ -691,7 +691,7 @@ class delta( P._cs_ksp_intrl ):
         else:
             return P + [(curr[0], F(curr[1]), F(curr[1]))]
 
-        # print 'FINAL P', P
+        # print(('FINAL P', P))
         return P
 
 
@@ -724,7 +724,7 @@ class delta( P._cs_ksp_intrl ):
 
         P = self.__enum_paths('e', graph, [], [])
 
-        # print 'P', P
+        # print(('P', P))
         '''        
         self.__visited = set()
 

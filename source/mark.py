@@ -47,13 +47,13 @@ import absblk as A
 
 import angr
 import claripy
-import simuvex
+import angr
 
 import networkx as nx
 
 import struct
 import copy
-import cPickle as pickle
+import pickle
 import pprint
 import math
 import re
@@ -92,7 +92,7 @@ class mark( object ):
         elif which == 'all':
             cnt = 0                                 # initialize counter
 
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 # skip functions that are outside of the main_object, e.g.:
                 #   <ExternObject Object cle##externs, maps [0x1000000:0x1008000]>,
                 #   <KernelObject Object cle##kernel,  maps [0x3000000:0x3008000]>
@@ -136,7 +136,7 @@ class mark( object ):
         # ---------------------------------------------------------------------
         if method == 'block':
             # iterate over each function
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 # skip functions that are outside of the main_object, e.g.:
                 #   <ExternObject Object cle##externs, maps [0x1000000:0x1008000]>,
                 #   <KernelObject Object cle##kernel,  maps [0x3000000:0x3008000]>
@@ -163,7 +163,7 @@ class mark( object ):
             avoid_addr = { }                        # set of avoided functions
 
             # iterate over each function
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 if func.name in avoid:
                     avoid_addr[ addr ] = 1          # mark blocks that you want to avoid
 
@@ -189,7 +189,7 @@ class mark( object ):
         # Iterate over abstracted basic blcoks
         # ---------------------------------------------------------------------
         elif method == 'abstract':
-            for node, attr in nx.get_node_attributes(self.__cfg.graph, 'abstr').iteritems(): 
+            for node, attr in nx.get_node_attributes(self.__cfg.graph, 'abstr').items(): 
                 yield node, attr                    # return tuple for the abstracted block
 
 
@@ -334,7 +334,7 @@ class mark( object ):
         self.__rg.add_nodes_from(HARDWARE_REGISTERS, bipartite=1)
 
         # create a mapping between basic blocks (nodes) and their entry points (addresses)
-        for node, _ in self.__cfg.graph.node.iteritems():
+        for node in self.__cfg.graph.nodes():
             self.__m[ node.addr ] = node
 
 
@@ -360,9 +360,9 @@ class mark( object ):
                 # apply abstraction to the basic block that starts at "addr"
                 abstr = A.abstract_ng(self.__proj, addr)
 
-                # print 'ADDR', hex(addr)
+                # print(('ADDR', hex(addr)))
                 # for a,b in abstr:
-                #     print '\t', a, b
+                #     print(('\t', a, b))
                 # 
                 # exit()
 
@@ -373,7 +373,7 @@ class mark( object ):
 
                 del abstr                           # release object to save memory
 
-            except Exception, err:
+            except Exception as err:
                 warn("Symbolic Execution at block 0x%x failed: '%s' Much sad :( "
                      "Skipping current block..." % (addr, str(err)))
 
@@ -411,11 +411,11 @@ class mark( object ):
 
 
         # collect all abstractions
-        for node, attr in nx.get_node_attributes(self.__cfg.graph,'abstr').iteritems(): 
+        for node, attr in nx.get_node_attributes(self.__cfg.graph,'abstr').items(): 
             abstr[node.addr] = attr
 
         # collect all failures
-        for node, _ in nx.get_node_attributes(self.__cfg.graph,'fail').iteritems(): 
+        for node, _ in nx.get_node_attributes(self.__cfg.graph,'fail').items(): 
             fail.add(node.addr)
 
         try:
@@ -424,7 +424,7 @@ class mark( object ):
             pickle.dump(fail,  output, 0)
             output.close()
 
-        except IOError, err:                        # error is not fatal, so don't abort program
+        except IOError as err:                        # error is not fatal, so don't abort program
             warn("Cannot save abstractions: %s" % str(err))
             return False
 
@@ -456,7 +456,7 @@ class mark( object ):
             # pprint.pprint(abstr)
             pklfile.close()
 
-        except IOError, err:                        # error is fatal, as we can't proceed
+        except IOError as err:                        # error is fatal, as we can't proceed
             fatal("Cannot load abstractions: %s" % str(err))
             
 
@@ -564,8 +564,8 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 if stmt['type'] == 'regset' and not isinstance(stmt['val'], tuple):
                     
-                    for reg, data in abstr['regwr'].iteritems():
-                     #   print '{',  reg, data
+                    for reg, data in abstr['regwr'].items():
+                     #   print(('{',  reg, data))
 
                         # apply register filter
                         if not self.__reg_filter(reg): continue
@@ -598,7 +598,7 @@ class mark( object ):
                                             } )
 
 
-                            for a, b in abstr['symvars'].iteritems():
+                            for a, b in abstr['symvars'].items():
                                 # SYM2ADDR[a] = b
 
                                 SYM2ADDR[a.shallow_repr()] = b
@@ -622,8 +622,8 @@ class mark( object ):
                 elif stmt['type'] == 'regset' and isinstance(stmt['val'], tuple):
 
                     #
-                    for reg, data in abstr['regwr'].iteritems():
-                    #    print '&&',  reg, data
+                    for reg, data in abstr['regwr'].items():
+                    #    print(('&&',  reg, data))
 
                         # apply register filter
                         if not self.__reg_filter(reg): continue
@@ -638,16 +638,16 @@ class mark( object ):
                             '''
                             dbg_prnt(DBG_LVL_0, "Statement match! (__r%d) %%%s = 0x%x (%s)" % 
                                                 (stmt['reg'], reg, data['const'], stmt['val'][0]))
-                            print '\t', 'ADDR', hex(addr)                            
-                            print '\t', data
-                            print '\t', abstr['conwr']
-                            print '\t', abstr['memwr']
-                            print '\n\n'
+                            print(('\t', 'ADDR', hex(addr)                            ))
+                            print(('\t', data))
+                            print(('\t', abstr['conwr']))
+                            print(('\t', abstr['memwr']))
+                            print(('\n\n'))
 
                             # apply abstraction to the basic block that starts at "addr"
                             abstr = A.abstract_ng(self.__proj, 0x403fa2)
 
-                            print '^^^^^^^^^^^^^^^^^^^^^^'
+                            print(('^^^^^^^^^^^^^^^^^^^^^^'))
                             abstr = A.abstract_ng(self.__proj, 0x40400A)
                             
                             exit()
@@ -663,7 +663,7 @@ class mark( object ):
                                 var = var['var']
 
 
-                            # print '============================>', var
+                            # print(('============================>', var))
                             var.add( (stmt['val'][0], data['const']) )
 
 
@@ -746,7 +746,7 @@ class mark( object ):
 
 
                                 # store addrstr as a tuple to distinguish it from variables
-                                # print '============================>', var
+                                # print(('============================>', var))
                                 var.add( (stmt['val'][0], (addrstr,)) )
 
 
@@ -761,7 +761,7 @@ class mark( object ):
                                                 # 'mem':(data['addr'], stmt['val'])
                                                 } )
 
-                                for a, b in abstr['symvars'].iteritems():
+                                for a, b in abstr['symvars'].items():
                                     SYM2ADDR[a.shallow_repr()] = b
 
                                     STR2BV  [a.shallow_repr()] = a
@@ -778,8 +778,8 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'regmod':
 
-                    for reg, data in abstr['regwr'].iteritems():
-                     #   print '{',  reg, data
+                    for reg, data in abstr['regwr'].items():
+                     #   print(('{',  reg, data))
 
                         # apply register filter
                         if not self.__reg_filter(reg): continue
@@ -805,7 +805,7 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'memrd':
                 
-                    for reg, data in abstr['regwr'].iteritems():
+                    for reg, data in abstr['regwr'].items():
 
                         # apply register filter
                         if not self.__reg_filter(reg): continue
@@ -838,7 +838,7 @@ class mark( object ):
                 elif stmt['type'] == 'memwr':
                     
                     for memwr in abstr['splmemwr']:
-                        print 'MEMWR', memwr
+                        print(('MEMWR', memwr))
                         # apply register filters
                         if not self.__reg_filter(memwr['mem']) or \
                            not self.__reg_filter(memwr['val']):
@@ -955,7 +955,7 @@ class mark( object ):
                 # {'uid':30, 'type':'cond', 'reg':0, 'op':'>=', 'num':'0x3243', 'target':'@__26'}
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'cond':
-                    # print abstr['cond']
+                    # print((abstr['cond']))
                     try:
                         if abstr['cond'] and abstr['cond']['op'] == stmt['op'] and \
                             abstr['cond']['const'] == stmt['num']:
@@ -1017,7 +1017,7 @@ class mark( object ):
                         continue        
 
                     for var, val in set(Vg['var']):
-                        # print var, fvar, val, fval
+                        # print((var, fvar, val, fval))
                         if var == fvar:
                             if isinstance(val, tuple) and val[0] != fval:
                                 Vg['var'].remove( (var, val) )
@@ -1030,42 +1030,42 @@ class mark( object ):
         # -------------------------------------------------------------------------------
         # check if you have a sufficient number of candidate blocks
         # -------------------------------------------------------------------------------
-        print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', len(self.__ir)
-        # for i,j in self.__rg.edge.iteritems(): print i, j
+        print(('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', len(self.__ir)))
+        # for i,j in self.__rg.edge.items(): print((i, j))
 
         cnt = set()
 
-        for n, c in nx.get_node_attributes(self.__cfg.graph,'cand').iteritems(): 
-            # print '0x%x' % n.addr, c
+        for n, c in nx.get_node_attributes(self.__cfg.graph,'cand').items(): 
+            # print(('0x%x' % n.addr, c))
 
             for a, _ in c:
                 cnt.add( a )
 
 
         if len(cnt) < self.__ir.nreal:
-            print len(cnt), cnt 
-            print self.__ir.nreal
+            print((len(cnt), cnt ))
+            print((self.__ir.nreal))
             error("Not enough candidate blocks")
             return False
 
 
 
-        # print self.vartab
-        # print self.varmap
-        # for i,j in self.varmap.iteritems():
-        #       print i, [(hex(j), k) for j, k in j]
+        # print((self.vartab))
+        # print((self.varmap))
+        # for i,j in self.varmap.items():
+        #       print((i, [(hex(j), k) for j, k in j]))
 
         self.map_graph = self.__rg
         
         # for edge in self.map_graph.edges(data=True):
-        #     print edge
+        #     print((edge))
 
         # for node in self.map_graph.nodes(data=True):
-        #     print node
+        #     print((node))
 
-        # print self.__rg.edges()
+        # print((self.__rg.edges()))
 
-        # print variable mappings 
+        # print((variable mappings ))
         for u, v, w in self.__rg.edges(data=True):
             if 'var' not in w:
                 continue
@@ -1112,7 +1112,7 @@ class mark( object ):
         # iterate over candidate basic blocks
         #
         # <CFGNode main+0xff 0x4007e6L[24]> [(4, ['rax']), (3, [('rsi', 576460752303358064L)])]
-        for node, attr in nx.get_node_attributes(self.__cfg.graph,'cand').iteritems(): 
+        for node, attr in nx.get_node_attributes(self.__cfg.graph,'cand').items(): 
             # dbg_prnt(DBG_LVL_3, "Analyzing candidate block at 0x%x..." % node.addr)
        
 
@@ -1123,7 +1123,7 @@ class mark( object ):
                 # "varset", "label", "jump" and "return" are not real statements and therefore
                 # they do not require an accepted block.
 
-                # print '--->', cand, stmt, attr
+                # print(('--->', cand, stmt, attr))
 
                 # -----------------------------------------------------------------------
                 # Statement 'regset'
@@ -1163,7 +1163,7 @@ class mark( object ):
                                 (stmt['uid'], cand['addr'], cand['sym'], stmt['val']) 
                             )
 
-                        # print '   $ $ $ $ $ $ $ $ RSVP:   ', rsvp[node.addr]
+                        # print(('   $ $ $ $ $ $ $ $ RSVP:   ', rsvp[node.addr]))
 
 
                     # TODO: make dependencies time-sensitive &  explain why it doesn't work
@@ -1233,7 +1233,7 @@ class mark( object ):
 
 
 
-        # print 'accepted', accepted
+        # print(('accepted', accepted))
 
 
         # -------------------------------------------------------------------------------
@@ -1310,13 +1310,13 @@ class mark( object ):
                 # modified any of the reserved memory addreses is a clobbering block
                 # -----------------------------------------------------------------------
                 if stmt['type'] == 'varset':
-                    # print '---------', vmap
+                    # print(('---------', vmap))
                     # for addr, size in abstr['conwr']:
                     for addr, ex in abstr['memwr']:
-                        # print addr, ex
+                        # print((addr, ex))
                         if addr.shallow_repr() in vmap and vmap[addr.shallow_repr()] == stmt['name']:
                             # block is clobbering
-                            print hex(node.addr), 'clob for varset'
+                            print((hex(node.addr), 'clob for varset'))
                             clob.add(stmt['uid'])
                             fatal('I should come back to that')
                             '''
@@ -1354,7 +1354,7 @@ class mark( object ):
                     #for reg in [r for r in abstr['regwr'].keys() if 1]:
                     for reg in abstr['regwr'].keys():
 
-                       # print reg, stmt, acc
+                       # print((reg, stmt, acc))
 
                         # if register is being written and block is not accepted, then it's 
                         # clobbering 
@@ -1460,8 +1460,8 @@ class mark( object ):
 
         dbg_prnt(DBG_LVL_1, "Done.")
 
-        # print clobbering
-        # print self.rsvp
+        # print((clobbering))
+        # print((self.rsvp))
         # exit()
 
         return clobbering

@@ -28,7 +28,7 @@
 # -------------------------------------------------------------------------------------------------
 from coreutils import *
 import signal
-import simuvex
+import angr
 import claripy
 import archinfo
 import angr
@@ -212,7 +212,7 @@ class abstract_ng( object ):
                     # "state.memory.permissions(value)" doesn't work here.
                     #
                     # So iterate over ELF sections looking for it
-                    for _, sec in  self.__proj.loader.main_object.sections_map.iteritems():                        
+                    for _, sec in  self.__proj.loader.main_object.sections_map.items():                        
                         # it's possible for the value to be part of >1 sections (usually when
                         # section's VA is 0; sec.vaddr != 0). We mark value as +W only when *all*
                         # sections are writable
@@ -231,7 +231,7 @@ class abstract_ng( object ):
                         else:
                             data['writable'] = False
                         
-                except Exception, e:                # page does not exist at given address
+                except Exception as e:                # page does not exist at given address
                     data['writable'] = False        # not writable at all
 
                     try:
@@ -243,7 +243,7 @@ class abstract_ng( object ):
                             if state.se.eval(rwx) & 2 == 2:
                                 data['writable'] = True
 
-                    except Exception, e:            # or angr.errors.SimMemoryError
+                    except Exception as e:            # or angr.errors.SimMemoryError
                         pass
 
             # -----------------------------------------------------------------
@@ -303,7 +303,7 @@ class abstract_ng( object ):
                 # -----------------------------------------------------------------------
                 else:
                     # iterate over previous writes
-                    for reg2, val in self.__reg_rawval.iteritems():
+                    for reg2, val in self.__reg_rawval.items():
                         try:
 
                             # check if raw values match
@@ -370,15 +370,15 @@ class abstract_ng( object ):
             val_reg = [leaf for leaf in action.data.recursive_leaf_asts]
 
 
-            # print 'ADDR', mem_reg, action.addr
-            # print 'ADDR', val_reg, action.addr
+            # print(('ADDR', mem_reg, action.addr))
+            # print(('ADDR', val_reg, action.addr))
                  
             # check AST have a single leaf
             if len(mem_reg) == 1 and len(val_reg) == 1:
                 mem, val = None, None
 
                 # check whether the leaf is a register
-                for sym, nam in self.__symreg.iteritems():
+                for sym, nam in self.__symreg.items():
                     # skip registers that are not symbolic (e.g., rbp)
                     if isinstance(sym.args[0], str) and sym.args[0] in mem_reg[0].shallow_repr():                        
                         symtab[nam] = sym
@@ -653,7 +653,7 @@ class abstract_ng( object ):
         data = self.__proj.loader.main_object.sections_map[".data"]
 
         addr = state.se.eval(state.inspect.mem_read_address)
-        # print '=== READ', hex(state.inspect.instruction), hex(addr)
+        # print(('=== READ', hex(state.inspect.instruction), hex(addr)))
 
         # check if address is inside .bss or .data sections
         if bss.min_addr  <= addr and addr <= bss.max_addr or \
@@ -728,7 +728,7 @@ class abstract_ng( object ):
         # We should add some checks to test whether the regwrite is "mov" or something else
 
 
-        # print '--------------- ', hex(state.addr), hex(state.inspect.instruction), reg, 
+        # print(('--------------- ', hex(state.addr), hex(state.inspect.instruction), reg, ))
         #                           state.inspect.reg_write_expr
 
 
@@ -755,7 +755,7 @@ class abstract_ng( object ):
             symtab = { }
 
             # find register dependencies on the address (e.g., rsi on <BV64 rsi_44_64 + 0x18>)
-            for sym, nam in self.__symreg.iteritems():
+            for sym, nam in self.__symreg.items():
                 # skip registers that are not symbolic (e.g., rbp)
                 if isinstance(sym.args[0], str) and sym.args[0] in addr.shallow_repr():
                     deps.append(nam)
@@ -808,7 +808,7 @@ class abstract_ng( object ):
             deps    = [ ]
             symtab  = { }
 
-            for sym, nam in self.__symreg.iteritems():
+            for sym, nam in self.__symreg.items():
                 if isinstance(sym.args[0], str) and sym.args[0] in addr.shallow_repr():
                     deps.append(nam)
                     symtab[nam] = sym
@@ -900,26 +900,26 @@ class abstract_ng( object ):
             addr=addr,                              # set address
             #mode='symbolic', 
             add_options={                           # configure options
-                simuvex.o.AVOID_MULTIVALUED_READS,
-                simuvex.o.AVOID_MULTIVALUED_WRITES,
-                simuvex.o.NO_SYMBOLIC_JUMP_RESOLUTION,
-                simuvex.o.CGC_NO_SYMBOLIC_RECEIVE_LENGTH,
-                simuvex.o.NO_SYMBOLIC_SYSCALL_RESOLUTION,
-                simuvex.o.TRACK_ACTION_HISTORY,
+                angr.options.AVOID_MULTIVALUED_READS,
+                angr.options.AVOID_MULTIVALUED_WRITES,
+                angr.options.NO_SYMBOLIC_JUMP_RESOLUTION,
+                angr.options.CGC_NO_SYMBOLIC_RECEIVE_LENGTH,
+                angr.options.NO_SYMBOLIC_SYSCALL_RESOLUTION,
+                angr.options.TRACK_ACTION_HISTORY,
                 
                 # newly added option
-                simuvex.o.SYMBOLIC_INITIAL_VALUES
+                angr.options.SYMBOLIC_INITIAL_VALUES
             },
-            remove_options=simuvex.o.resilience_options | simuvex.o.simplification           
+            remove_options=angr.options.resilience_options | angr.options.simplification           
         )
 
         # configure more options (add/remove)
-        inist.options.discard(simuvex.o.CGC_ZERO_FILL_UNCONSTRAINED_MEMORY)
+        inist.options.discard(angr.options.CGC_ZERO_FILL_UNCONSTRAINED_MEMORY)
         inist.options.update( {
-            simuvex.o.TRACK_REGISTER_ACTIONS,
-            simuvex.o.TRACK_MEMORY_ACTIONS,
-            simuvex.o.TRACK_JMP_ACTIONS,
-            simuvex.o.TRACK_CONSTRAINT_ACTIONS }
+            angr.options.TRACK_REGISTER_ACTIONS,
+            angr.options.TRACK_MEMORY_ACTIONS,
+            angr.options.TRACK_JMP_ACTIONS,
+            angr.options.TRACK_CONSTRAINT_ACTIONS }
         )
 
       
@@ -1046,7 +1046,7 @@ class abstract_ng( object ):
             newst = simgr.deadended[0]              # work with what you have
            
         else:                                       # everything else should generate an error
-            print simgr.stashes
+            print((simgr.stashes))
             raise Exception('There are no usable stashes!')
 
 
@@ -1081,31 +1081,31 @@ class abstract_ng( object ):
 
         '''
         print
-        print '-------------------- Register Writes --------------------'                   
-        for a, b in self.regwr.iteritems():
-            print a, b
+        print(('-------------------- Register Writes --------------------'                   ))
+        for a, b in self.regwr.items():
+            print((a, b))
 
-        print '-------------------- Memory Reads --------------------'            
+        print(('-------------------- Memory Reads --------------------'            ))
         for a, b in self.memrd:
-            print a, b
+            print((a, b))
 
-        print '-------------------- Memory Writes --------------------'            
+        print(('-------------------- Memory Writes --------------------'            ))
         for a, b in self.memwr:
-            print a, b
+            print((a, b))
 
-        print '-------------------- Concrete Writes --------------------'            
+        print(('-------------------- Concrete Writes --------------------'            ))
         for a, b in self.conwr:
-            print a, b
+            print((a, b))
 
-        print '-------------------- SPL Memory Writes --------------------'            
+        print(('-------------------- SPL Memory Writes --------------------'            ))
         for a in self.splmemwr:
-            print a
+            print((a))
 
-        print '-------------------- Calls --------------------'            
-        print self.call
+        print(('-------------------- Calls --------------------'            ))
+        print((self.call))
 
-        print '-------------------- Conditional Jumps --------------------'            
-        print self.cond
+        print(('-------------------- Conditional Jumps --------------------'            ))
+        print((self.cond))
         '''
 
 
@@ -1172,8 +1172,8 @@ if __name__ == '__main__':                          # DEBUG ONLY
     abstr = abstract_ng(project, 0x0x40c01f)
 
     for a, b in abstr:
-        print '\t', a, b
+        print(('\t', a, b))
 
-    print 'done!'
+    print(('done!'))
 '''
 # -------------------------------------------------------------------------------------------------

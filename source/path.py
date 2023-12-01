@@ -238,7 +238,7 @@ class _cs_ksp_intrl( object ):
                         self.__G[ self.__f(p[i]) ][ self.__f(p[i+1]) ][ 'avoid' ] = \
                                     self.__get_precall_stack(p, p[i])
   
-                    # print '\tDROP EDGE', self.__f(p[i]), self.__f(p[i+1]), self.__get_precall_stack(p, p[i])
+                    # print(('\tDROP EDGE', self.__f(p[i]), self.__f(p[i+1]), self.__get_precall_stack(p, p[i])))
 
 
 
@@ -247,7 +247,7 @@ class _cs_ksp_intrl( object ):
                     self.__G.node[ self.__f(node) ][ 'avoid' ] = \
                                 self.__get_precall_stack(rootpath, node)
 
-                    # print '\tDROP NODE', self.__f(node), self.__get_precall_stack(rootpath, node)
+                    # print(('\tDROP NODE', self.__f(node), self.__get_precall_stack(rootpath, node)))
 
 
                 # calculate spur path from the spur node to the destination
@@ -258,7 +258,7 @@ class _cs_ksp_intrl( object ):
                             self.__shortest_path(spur, destination, cur_uid, self.__get_precall_stack(A[k-1], spur))
 
 
-                # print "TRY SP", hex(spur), hex(destination), pretty_list(spurpath)
+                # print(("TRY SP", hex(spur), hex(destination), pretty_list(spurpath)))
                         
                 length = spurpathlens[-1]
 
@@ -304,7 +304,7 @@ class _cs_ksp_intrl( object ):
                         heapq.heappush(B, (length+rootpathlen, path, pathlens, expaths) )
 
 
-                # print '\t\tCLEAR ALL DROPS'
+                # print(('\t\tCLEAR ALL DROPS'))
 
                 # add back the edges and nodes that have been "deleted" from the graph.                     
                 # (simply delete "avoid" attributes from them)
@@ -776,7 +776,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
             u = Q.get().data                        # get front node's data
 
         
-            # print node with minimum cost
+            # print((node with minimum cost))
             if self.__backpointer[u] == -1: n, a = '-1', 0xffffffff
             else: n, a = self.__backpointer[u].name, self.__backpointer[u].addr
 
@@ -1065,7 +1065,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         #   nonclob = [root.addr] + [final.addr for final in finals]
 
         # exclude clobbering blocks from search (mark them so they can be avoided)
-        for addr, uidlist in self.__clobbering.iteritems():            
+        for addr, uidlist in self.__clobbering.items():            
             # if addr not in nonclob and not disjoint(set(uidlist), clobs):
             if not disjoint(set(uidlist), clobs):
                 self.__G.node[ ADDR2NODE[addr] ]['clobbering'] = 1
@@ -1080,19 +1080,19 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         try:
             # get shortest paths to all final nodes (ignore the return nodes)
             paths, _ = self.__dijkstra_variant_rcsv(root, finals, precall_stack=precall_stack)
-        except Exception, e:                        # just in case that something goes wrong                       
-            traceback.print_exc()                   # print exception trace
+        except Exception as e:                        # just in case that something goes wrong                       
+            traceback.print_exc()                   # print((exception trace))
             fatal('Unexpected exception in __dijkstra_variant_rcsv(): %s' % str(e))
 
 
-        # print function depths (DBG_LVL_4 only)        
+        # print((function depths (DBG_LVL_4 only)        ))
         dbg_prnt(DBG_LVL_4, '\tFunction Depths:')
 
-        for func, (depth, path) in self.__funcdepth.iteritems():
+        for func, (depth, path) in self.__funcdepth.items():
             dbg_prnt(DBG_LVL_4, '%32s: %2d (%s)' % (func.name, depth, pretty_list(path)))
 
 
-        # print path(s) to the user (DBG_LVL_3 and DBG_LVL_4 only)
+        # print((path(s) to the user (DBG_LVL_3 and DBG_LVL_4 only)))
         for final, path in zip(finals, paths):
 
             if path[0] != INFINITY:
@@ -1267,7 +1267,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         self.__radj = mk_reverse_adj(adj)           # build the reverse adjacency list
 
         # build a suitable dictionary with clobbering blocks
-        for uid, addrs in clobbering.iteritems():
+        for uid, addrs in clobbering.items():
             for addr in addrs:
                 self.__clobbering.setdefault(addr, []).append(uid)
        
@@ -1397,7 +1397,7 @@ if __name__ == '__main__':                          # DEBUG ONLY
 
 
     # create a quick mapping between basic block addresses and their corresponding functions
-    for _, func in CFG.functions.iteritems():
+    for _, func in CFG.functions.items():
         for addr in func.block_addrs:
             ADDR2FUNC[ addr ] = func
 
@@ -1420,31 +1420,31 @@ if __name__ == '__main__':                          # DEBUG ONLY
     for ll, pp in p.k_shortest_paths(0x406806, 0x42ad5e, 0, 10): # openssh
 
     #for ll, pp in p.k_shortest_loops(0x4043f5, 0, PARAMETER_P):   # openssh
-        print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
-        print 'Path (%d): %s' % (ll, pretty_list(pp))
+        print(('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'))
+        print(('Path (%d): %s' % (ll, pretty_list(pp))))
 
         paths.append( (ll, pp) )
 
-    print 'Printing all paths:'
+    print(('Printing all paths:'))
     for ll, pp in paths:
-        print 'Path (%d): %s' % (ll, pretty_list(pp))
+        print(('Path (%d): %s' % (ll, pretty_list(pp))))
 
 
-    print '\n\n\n******************************************************\n\n\n'
+    print(('\n\n\n******************************************************\n\n\n'))
 
     for ll, pp in p.k_shortest_paths(0x42acf0, 0x42ad5e, 0, 10): # openssh
     
 
     #for ll, pp in p.k_shortest_loops(0x4043f5, 0, PARAMETER_P):   # openssh
-        print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
-        print 'Path (%d): %s' % (ll, pretty_list(pp))
+        print(('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'))
+        print(('Path (%d): %s' % (ll, pretty_list(pp))))
 
         paths.append( (ll, pp) )
 
 
-    print 'Printing all paths:'
+    print(('Printing all paths:'))
     for ll, pp in paths:
-        print 'Path (%d): %s' % (ll, pretty_list(pp))
+        print(('Path (%d): %s' % (ll, pretty_list(pp))))
 
 
 '''

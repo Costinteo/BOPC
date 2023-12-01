@@ -139,7 +139,7 @@ class simulate:
         
         symvstr2 = symvstr[symvstr.find(' '):-1]
    
-        # print 'symvstr2', symvstr2
+        # print(('symvstr2', symvstr2))
 
         # this is the old style check 
         if symvstr2 in ' '.join([c.shallow_repr().replace("{UNINITIALIZED}", "") \
@@ -149,19 +149,19 @@ class simulate:
         
         # reinforce function with a stronger check
         for constraint in state.se.constraints:
-        # print 'CONTRST', constraint
+        # print(('CONTRST', constraint))
 
             try:
                 # treat constraint as an AST and iterate over its leaves
                 for leaf in constraint.recursive_leaf_asts:
-                # print '\tLEAF', symv, symvstr, leaf, leaf.shallow_repr().replace("{UNINITIALIZED}", "")
+                # print(('\tLEAF', symv, symvstr, leaf, leaf.shallow_repr().replace("{UNINITIALIZED}", "")))
 
                     # we can't compare them directly, so we cast them into strings first
                     # (not a very "clean" way to do that, but it works)
                     if leaf.shallow_repr().replace("{UNINITIALIZED}", "") == symvstr:
                         return True                 # symbolic variable found!
 
-            except Exception, err:
+            except Exception as err:
                 # fatal('__in_constraints() unexpected exception: %s' % str(err))
                 pass
 
@@ -293,7 +293,7 @@ class simulate:
 
 
         try:                    
-            for _, sec in  self.__proj.loader.main_object.sections_map.iteritems():
+            for _, sec in  self.__proj.loader.main_object.sections_map.items():
                 if sec.contains_addr(addr):                    
                     return ('R' if sec.is_readable   else '') + \
                            ('W' if sec.is_writable   else '') + \
@@ -335,7 +335,7 @@ class simulate:
 
             return False                            # variable not found
 
-        except Exception, err:
+        except Exception as err:
             # This --> BOPC.py -ddd -b eval/nginx/nginx1 -s payloads/ifelse.spl -a load -f gdb -e -1
             # fatal('__symv_in() unexpected exception: %s' % str(err))
 
@@ -371,7 +371,7 @@ class simulate:
         addr = state.se.eval(symv)                  # try to concretize it
 
 
-        #  print '***** ALLOC UN:', hex(addr), symv
+        #  print(('***** ALLOC UN:', hex(addr), symv))
 
         # we say < 0x1000, to catch cases with small offsets:
         # e.g., *<BV64 Reverse(stack_16660_262144[258239:258176]) + 0x68>
@@ -387,14 +387,14 @@ class simulate:
             # in case that addr > 0, make sure that symv is concretized from 0
             # (otherwise, we'll start before self.__alloc_size)
             x = state.se.BVS('x', 64)
-            # print 'x is ', x, alloca + addr, symv
+            # print(('x is ', x, alloca + addr, symv))
 
             # this indirection ensure that symv concretized to 64 bits
             state.add_constraints(x == alloca + addr)
             state.add_constraints(symv == x)
 
             # 
-            # print '-->', symv, 'goes to ', hex(alloca + addr)
+            # print(('-->', symv, 'goes to ', hex(alloca + addr)))
 
             self.__relative[alloca] = '%s + 0x%03x' % (ALLOCATOR_NAME, self.__alloc_size)
 
@@ -436,7 +436,7 @@ class simulate:
         bss  = self.__proj.loader.main_object.sections_map[".bss"]
         data = self.__proj.loader.main_object.sections_map[".data"]
 
-        # print 'INIT MEMORY', hex(addr), self.__mread(state, addr, length)
+        # print(('INIT MEMORY', hex(addr), self.__mread(state, addr, length)))
 
 
         # if the memory cell is empty (None) or if the cell is initialized with a
@@ -506,7 +506,7 @@ class simulate:
 #        else:
 #            self.__sim_mode = SIM_MODE_DISPATCH
 
-        print 'state.inspect.mem_read_address', state.inspect.mem_read_address
+        print(('state.inspect.mem_read_address', state.inspect.mem_read_address))
 
 
         # if the address is an uninitialized symbolic variable, it can point to any location,
@@ -589,7 +589,7 @@ class simulate:
                     (insn_addr, addr, state.inspect.mem_write_expr, size), pre='[W] ')
         
 
-#        print 'BEFORE', self.__mread(state, addr, size),  state.inspect.mem_write_expr
+#        print(('BEFORE', self.__mread(state, addr, size),  state.inspect.mem_write_expr))
 #        ISPO = state.inspect.mem_write_expr
         
 
@@ -660,7 +660,7 @@ class simulate:
 #                        self.__imm.add(addr + i)
 
         
-#        print 'AFTER', self.__mread(state, addr, size),  state.inspect.mem_write_expr
+#        print(('AFTER', self.__mread(state, addr, size),  state.inspect.mem_write_expr))
 #        self.FOO[ self.__mread(state, addr, size) ]  = ISPO
 
         # All external inputs (sockets, file descriptors, etc.) should be first written somewhere
@@ -729,7 +729,7 @@ class simulate:
             # if simulation is in dispatch mode, check whether the modified register is immutable
             if self.__sim_mode == SIM_MODE_DISPATCH:
 
-                # print 'IMM REGS', self.__imm_regs
+                # print(('IMM REGS', self.__imm_regs))
                 if regnam in self.__imm_regs:
 
                     # if the new value is the same with the old one, we're good :)
@@ -746,7 +746,7 @@ class simulate:
                         raise Exception("Attempted to write to immutable register '%s'" % regnam)
 
                     else:
-                        print "immutable register '%s' overwritten with same value 0x%x" % (regnam, newval)
+                        print(("immutable register '%s' overwritten with same value 0x%x" % (regnam, newval)))
 
 
             # check whether symbolic variable persists after write
@@ -799,21 +799,21 @@ class simulate:
         # FILE *fopen(const char *path, const char *mode)
         # ---------------------------------------------------------------------
         if name == 'fopen':
-            # print 'RDI', state.regs.rdi
-            # print 'RSI', state.regs.rsi
+            # print(('RDI', state.regs.rdi))
+            # print(('RSI', state.regs.rsi))
             
             # if rdi is an expression then we may need to 
 
             # we work similarly with __mem_RSVPs, but our task here is simpler
             con_addr = state.se.eval(state.regs.rdi)
-            # print 'ADDR', hex(con_addr)
+            # print(('ADDR', hex(con_addr)))
 
             if 'W' not in self.__get_permissions(con_addr, state):
                 self.__alloc_un(state, state.regs.rdi)
                 #raise Exception("Attempted to write to an non-writable address '0x%x'" % addr)
         
             con_addr = state.se.eval(state.regs.rdi)
-            # print 'ADDR', hex(con_addr)
+            # print(('ADDR', hex(con_addr)))
 
             name = SYMBOLIC_FILENAME
           
@@ -842,7 +842,7 @@ class simulate:
         # TODO: Delete this code, or check for uninitialized FILE*
         # ---------------------------------------------------------------------
         elif name == '_IO_getc': 
-            # print 'RDI', state.regs.rdi
+            # print(('RDI', state.regs.rdi))
             error('Oups!')   
             pass
 
@@ -1010,7 +1010,7 @@ class simulate:
         self.__inivar_rel[ addr ] = relvals     # values in the relative-form 
 
         addr += len(val)                        # and then shift index to the next value
-        print 'INIVAR_REL:', hex(addr), relvals      
+        print(('INIVAR_REL:', hex(addr), relvals      ))
 
         dbg_prnt(DBG_LVL_3, "Done. '%s' has been initialized at 0x%x" % (variable, orig_addr))
 
@@ -1043,12 +1043,12 @@ class simulate:
         # ---------------------------------------------------------------------
         dbg_prnt(DBG_LVL_2, 'Done. Pool Size: %s. Variable(s) memory layout:' % bold(self.__plsz))
 
-        for addr, val in sorted(self.__inivar.iteritems()):
+        for addr, val in sorted(self.__inivar.items()):
             dbg_prnt(DBG_LVL_2, '  %16x <- %s' % (addr, ' '.join(['%02x' % ord(v) for v in val])))
             
         # self.__vartab shows the address that each variable has been stored
         dbg_arb(DBG_LVL_3, 'Variable Table:', 
-                                ['%s:0x%x' % (n,v) for n, v in self.__vartab.iteritems()])
+                                ['%s:0x%x' % (n,v) for n, v in self.__vartab.items()])
         
         del self.__inivar                         # we don't need this guy anymore
 
@@ -1100,7 +1100,7 @@ class simulate:
         self.__disable_hooks = True                 # disable hooks as we'll write to memory
 
 
-        for blk, rsvp in self.__rsvp.iteritems():   # for each basic block reservation
+        for blk, rsvp in self.__rsvp.items():   # for each basic block reservation
 
             # check if it's the right time to do the reservation.
             #
@@ -1118,7 +1118,7 @@ class simulate:
                    continue
 
 
-                print "RSVP ADDR',", addr, val
+                print(("RSVP ADDR',", addr, val))
 
                 
                 reg = [r for v, r in self.__regmap if v == '__r%d' % self.__IR[uid]['reg']][0]
@@ -1139,7 +1139,7 @@ class simulate:
                 for leaf in STR2BV[addr].recursive_leaf_asts:
                     if leaf.shallow_repr() in SYM2ADDR:
 
-                        print 'ADD contraint', leaf, hex(SYM2ADDR[leaf.shallow_repr() ][0])#, self.__mwrite(state, SYM2ADDR[leaf], 8, leaf)
+                        print(('ADD contraint', leaf, hex(SYM2ADDR[leaf.shallow_repr() ][0]), self.__mwrite(state, SYM2ADDR[leaf], 8, leaf)))
                         #self.__state.add_constraints(leaf == self.__mwrite(state, SYM2ADDR[leaf], 8, leaf))
                         self.FOO.append(leaf)
                         self.__sym[ SYM2ADDR[leaf.shallow_repr() ][0] ] = leaf
@@ -1149,7 +1149,7 @@ class simulate:
                 # (e.g. <BV64 rsi_713_64 + 0x10>).
                 #
                 # Otherwise, address is constant so we directly write to that address.
-                for reg, symreg in sym.iteritems(): # {'rsi': <BV64 rsi_713_64>} pairs
+                for reg, symreg in sym.items(): # {'rsi': <BV64 rsi_713_64>} pairs
 
                     # if a register has already been used in a reservation, we don't add more
                     # constraints as we'll probably make it u n-satisfiable. For example, if
@@ -1160,7 +1160,7 @@ class simulate:
                     if symreg not in self.__reserved_syms:
                         self.__reserved_syms.add( symreg )
 
-                       # print 'add_constraints', symreg, STR2BV[addr]
+                       # print(('add_constraints', symreg, STR2BV[addr]))
 
                         # UPDATE: We may not need to add constraints. It's possible to already
                         #   have some constraints with addresses from the allocator, so when
@@ -1195,7 +1195,7 @@ class simulate:
                         state_copy.add_constraints(STR2BV[addr] == x)
 
 
-                        print 'state.satisfiable():', state_copy.satisfiable(), state_copy.se.satisfiable()
+                        print(('state.satisfiable():', state_copy.satisfiable(), state_copy.se.satisfiable()))
 
                         if not state_copy.satisfiable():
                             dbg_prnt(DBG_LVL_2, "Reservation constraint was un-satisfiable. Rolling back...")
@@ -1217,22 +1217,22 @@ class simulate:
                             del state_copy
 
 
-                # print 'FINAL CONSTRAINTS', state.se.constraints
+                # print(('FINAL CONSTRAINTS', state.se.constraints))
 
                 try:
                     # 'addr' is string with a symbolic expression. Convert it back to bitvector
                     # and concretize it
                     con_addr = state.se.eval(STR2BV[addr])
 
-                    print 'con_addr', hex(con_addr)
+                    print(('con_addr', hex(con_addr)))
 
                     # The stack address in the basic block is different from the one in the
                     # current path. So readjust it (TODO: Do it in a less sloppy way)
                     # TODO: !!!!!!!
                     if abs(con_addr - RSP_BASE_ADDR) < 0x1000:
                         con_addr = (con_addr - RSP_BASE_ADDR) + state.se.eval(state.regs.rsp)
-                        print 'CON', state.regs.rsp, hex(state.se.eval(state.regs.rsp))
-                        print 'CONCON', hex(con_addr)
+                        print(('CON', state.regs.rsp, hex(state.se.eval(state.regs.rsp))))
+                        print(('CONCON', hex(con_addr)))
                         #  exit()
 
 
@@ -1248,20 +1248,20 @@ class simulate:
                     writable = True
                     in_section = False
                     try:                    
-                        for _, sec in  self.__proj.loader.main_object.sections_map.iteritems():
+                        for _, sec in  self.__proj.loader.main_object.sections_map.items():
                             if sec.contains_addr(con_addr):
-                                print 'sec.is_writable', sec.is_writable
+                                print(('sec.is_writable', sec.is_writable))
                                 writable &= sec.is_writable
                                 in_section = True
                         
                         if not in_section:
                             rwx = state.memory.permissions(con_addr)
-                            print 'rwx', rwx
+                            print(('rwx', rwx))
                             if state.se.eval(rwx) & 2 == 2:
                                 writable = True
                             else:
                                 writable = False                                
-                    except Exception, e:
+                    except Exception as e:
                         writable = False                        
                     # -------------------------------------------------------------------------
 
@@ -1277,10 +1277,10 @@ class simulate:
 
                 except angr.errors.SimUnsatError:   # un-satisfiable constraints
                     dbg_prnt(DBG_LVL_2, "Reservation was un-satisfiable. Discard current path.")
-                    print 'SSSSS', self.__state.se.constraints
+                    print(('SSSSS', self.__state.se.constraints))
                     return False                    # reservation failed
                 
-                except Exception, e:
+                except Exception as e:
                     dbg_prnt(DBG_LVL_2, "Unknown Exception '%s'. Discard current path." % str(e))
                     return False                    # reservation failed
 
@@ -1298,7 +1298,7 @@ class simulate:
                 # write value byte-by-byte. Memory address must also be immutable
                 p_val = struct.pack("<Q", val)
 
-                # print 'WRITING:', hex(val), 'at ', hex(con_addr)
+                # print(('WRITING:', hex(val), 'at ', hex(con_addr)))
 
                 # this was problematic (endianess was fucked up)
                 # self.__mwrite(state, con_addr, 8, p_val)
@@ -1307,7 +1307,7 @@ class simulate:
                 # before you write the value, check if the contents of this address are already
                 # in the contraints
                 symv = self.__mread(state, con_addr, 8)
-                print 'PRIOR VALUE at', hex(con_addr), '::', symv
+                print(('PRIOR VALUE at', hex(con_addr), '::', symv))
                 if self.__in_constraints(symv) or [V for V in self.__inireg.values() if V.shallow_repr() == symv.shallow_repr()]:
                     dbg_prnt(DBG_LVL_2, "RSVP already in constraints!")
                 else:
@@ -1332,10 +1332,10 @@ class simulate:
                         dbg_prnt(DBG_LVL_2, "RSVP caused constraints to be unsatisfiable. Discard Path")
                         return False
 
-               # print '$$$$$$$$$$$$$$$$$$$$$$$$$', self.__mread(state, con_addr, 8)
+               # print(('$$$$$$$$$$$$$$$$$$$$$$$$$', self.__mread(state, con_addr, 8)))
 
-        # print 'FINITO MEM_RSVPz', state.satisfiable(), state.se.satisfiable()
-        # print 'CONSTRAINTS', state.se.constraints
+        # print(('FINITO MEM_RSVPz', state.satisfiable(), state.se.satisfiable()))
+        # print(('CONSTRAINTS', state.se.constraints))
         
         self.__disable_hooks = False                # enable hooks again
 
@@ -1398,7 +1398,7 @@ class simulate:
 
 
                 node = ADDR2NODE[found.addr]
-                # print 'NODE ', node, len(node.instruction_addrs)
+                # print(('NODE ', node, len(node.instruction_addrs)))
 
                 num_inst = len(node.instruction_addrs) if node is not None else None
                 if num_inst:
@@ -1406,10 +1406,10 @@ class simulate:
 
                 else:
                     NEW = simgr.step()
-                    # print 'NEW', NEW, NEW.errored
+                    # print(('NEW', NEW, NEW.errored))
 
 
-            except Exception, msg:                   
+            except Exception as msg:                   
                 dbg_prnt(DBG_LVL_3, "Subpath failed. Exception raised: '%s'" % bolds(str(msg)))
                 found = None                        # nothing found
                 break                               # abort
@@ -1417,7 +1417,7 @@ class simulate:
             signal.alarm(0)                         # disable alarm
 
             if not simgr.active:
-                # print 'Stashes', simgr.stashes
+                # print(('Stashes', simgr.stashes))
                 dbg_arb(DBG_LVL_3, "Constraints: ", found.se.constraints)
 
                 dbg_prnt(DBG_LVL_3, "Subpath failed (No 'active' stashes)")
@@ -1425,12 +1425,12 @@ class simulate:
                 break                               # abort
         
     
-            #print 'Stashes', simgr.stashes
+            #print(('Stashes', simgr.stashes))
 
             found = None                     # nothing found
 
-            # print 'Stashes', simgr.stashes            
-            # print 'state.satisfiable():', simgr.active[0].satisfiable()
+            # print(('Stashes', simgr.stashes            ))
+            # print(('state.satisfiable():', simgr.active[0].satisfiable()))
 
             # drop any active stashes and make found stashes, active so you
             # can continue the search           
@@ -1447,12 +1447,12 @@ class simulate:
                 dbg_prnt(DBG_LVL_3, "Block 0x%x found!" % blk)
                 dbg_arb(DBG_LVL_3, "Constraints: ", found.se.constraints)
                 
-            # print 'FOUND IS ', found
+            # print(('FOUND IS ', found))
             # self.__sim_mode = SIM_MODE_DISPATCH
             
 
         if not found:                               # if nothing found, drop cloned state
-            print 'Stashes', simgr.stashes
+            print(('Stashes', simgr.stashes))
 
             self.unstash_context()
             del state
@@ -1526,9 +1526,9 @@ class simulate:
 
         self.FOO = []
 
-#        print 'RSVPs', 
-#        for addr, x in sorted(rsvp.iteritems()):
-#            print hex(addr), x
+#        print(('RSVPs', ))
+#        for addr, x in sorted(rsvp.items()):
+#            print((hex(addr), x))
 
 
         # the base adress that uninitialized symbolic variables should be allocated 
@@ -1644,7 +1644,7 @@ class simulate:
         if not state:
             state = self.__state
 
-        # print '^^^^^^^^^^^^^^', self.unchecked_regsets
+        # print(('^^^^^^^^^^^^^^', self.unchecked_regsets))
 
 
         for reg, val in self.unchecked_regsets:
@@ -1658,7 +1658,7 @@ class simulate:
                     warn('Wrong concretized value! Fixing it.... %x != %x' %                        
                             (state.se.eval( self.__getreg(reg, state) ), val))
 
-                    # print '-----------> ',  reg, self.__getreg(reg, state)
+                    # print(('-----------> ',  reg, self.__getreg(reg, state)))
                     state.add_constraints(self.__getreg(reg, state) == val)
 
                     if not state.satisfiable():
@@ -1706,11 +1706,11 @@ class simulate:
 #        self.__blk_start = currb
 #        self.__blk_end   = currb + ADDR2NODE[currb].size
 #
-#        print 'BLK START', hex(self.__blk_start)
-#        print 'BLK ENDDD', hex(self.__blk_end)
+#        print(('BLK START', hex(self.__blk_start)))
+#        print(('BLK ENDDD', hex(self.__blk_end)))
 
 
-#        for a in self.__imm: print 'self.__imm', hex(a)        
+#        for a in self.__imm: print(('self.__imm', hex(a)        ))
 
         # Check if current basic block matches with the address of the current state
         if currb != self.__state.addr:              # base check            
@@ -1726,14 +1726,14 @@ class simulate:
             return None
 
 
-        # print 'SELF CON', self.__state.se.constraints
+        # print(('SELF CON', self.__state.se.constraints))
 
 
 
         self.__disable_hooks = True
         
         for var in self.FOO:
-            # print ' var', str(var)
+            # print((' var', str(var)))
             if var.shallow_repr() in SYM2ADDR:
                 addr, size = SYM2ADDR[var.shallow_repr()]
 
@@ -1747,7 +1747,7 @@ class simulate:
                                                      SYM2ADDR[var.shallow_repr()][1])
 
 
-               # print 'QQ', SYM2ADDR[var.shallow_repr()], '%%%%', len(var), '==', len(MEM), '|', var, '?', MEM
+               # print(('QQ', SYM2ADDR[var.shallow_repr()], '%%%%', len(var), '==', len(MEM), '|', var, '?', MEM))
                 
                 
                 if len(var) != len(MEM):                                    
@@ -1755,13 +1755,13 @@ class simulate:
 
                 # if it's already a concreate value don't add a constraint
                 else:
-                    # print 'ADD CONSTRAINT FOO', var, MEM
+                    # print(('ADD CONSTRAINT FOO', var, MEM))
                     self.__state.add_constraints(var == MEM)
                 
             else:
                 pass
             
-        # print 'ok'
+        # print(('ok'))
 
 
         # update immutable register set
@@ -1832,7 +1832,7 @@ class simulate:
                     dbg_prnt(DBG_LVL_2, "Edge successfully simulated.")
 
                     if slen > 0:
-                        # print 'unchecked_regsets', self.unchecked_regsets
+                        # print(('unchecked_regsets', self.unchecked_regsets))
                         self.__check_regsets(nextst)
 
 
@@ -1871,12 +1871,12 @@ class simulate:
         # ---------------------------------------------------------------------
         dbg_prnt(DBG_LVL_0, 'Finalizing Apriori Register Assignments (if any):')
 
-            # for reg, val in self.__reg.iteritems():
+            # for reg, val in self.__reg.items():
             #     # tuples are not part of the constraints and therefore are discarded
             #     if isinstance(val, tuple):
             #         pass
 
-        for reg, symv in self.__inireg.iteritems():           
+        for reg, symv in self.__inireg.items():           
             
             # check if any of the original register is still in the constraints
             if self.__in_constraints(symv):
@@ -1890,7 +1890,7 @@ class simulate:
 
         if self.condreg:
             symv = self.__getreg(self.condreg)           
-            print '--------------- CONDREG', self.condreg, symv
+            print(('--------------- CONDREG', self.condreg, symv))
             
             if self.__in_constraints(symv):
                 val = self.__state.se.eval(symv)
@@ -1906,7 +1906,7 @@ class simulate:
         # ---------------------------------------------------------------------       
         dbg_prnt(DBG_LVL_2, 'Finalizing %d memory addresses...' % len(self.__mem))
 
-        for addr, val in self.__mem.iteritems():
+        for addr, val in self.__mem.items():
             dbg_prnt(DBG_LVL_3, 'Inspecting address 0x%x ...' % addr)
 
             # if __mem[addr] is in the form (value, size), then it's already concretized,
@@ -1941,8 +1941,8 @@ class simulate:
         # TODO: This case "SYM DICT: 0xd8001000 <BV64 __add__(0xa, r12_562_64, r14_564_64)>"
         # will give wrong results when concretized if r12 is relative
 
-        # for a, b in self.__sym.iteritems():
-        #     print 'SYM DICT:', hex(a), b
+        # for a, b in self.__sym.items():
+        #     print(('SYM DICT:', hex(a), b))
         
 
         # ---------------------------------------------------------------------
@@ -1953,7 +1953,7 @@ class simulate:
         for var, addr in self.__ext.items():                
             dbg_prnt(DBG_LVL_3, "Inspecting external input '%s'" % var.shallow_repr())
 
-            # print var, addr
+            # print((var, addr))
 
 
             # ---------------------------------------------------------------------
@@ -1969,7 +1969,7 @@ class simulate:
                     ext = var.shallow_repr()
 
                 elif SYMBOLIC_FILENAME in var.shallow_repr():
-                    # print 'insize ;)'
+                    # print(('insize ;)'))
 
                     
                     # check again if it's in the constraints
@@ -2030,8 +2030,8 @@ class simulate:
         self.__blk_start = self.__state.addr
         self.__blk_end   = self.__state.addr + ADDR2NODE[self.__state.addr].size
 
-        # print 'BLK START STEP', hex(self.__blk_start)
-        # print 'BLK ENDDD STEP', hex(self.__blk_end)
+        # print(('BLK START STEP', hex(self.__blk_start)))
+        # print(('BLK ENDDD STEP', hex(self.__blk_end)))
 
 
         self.__disable_hooks = False                # enable hooks to capture reads/writes
@@ -2048,7 +2048,7 @@ class simulate:
             try:
                 node = ADDR2NODE[self.__state.addr]
 
-            except Exception, e:
+            except Exception as e:
                 node = None
 
             num_inst = len(node.instruction_addrs) if node is not None else None
@@ -2058,7 +2058,7 @@ class simulate:
                 simgr.step()
                 
 
-        except Exception, msg:                   
+        except Exception as msg:                   
             dbg_prnt(DBG_LVL_3, "Step failed. Exception raised: '%s'" % bolds(str(msg)))
             return -1
 
@@ -2070,7 +2070,7 @@ class simulate:
         dbg_prnt(DBG_LVL_2, "Step simulated successfully.")
 
         if not simgr.active:
-            print 'Stashes', simgr.stashes
+            print(('Stashes', simgr.stashes))
             
             dbg_prnt(DBG_LVL_3, "Stop failed (No 'active' stashes)")            
 
@@ -2113,7 +2113,7 @@ class simulate:
     '''
     def __deepcopy__(self, memo):
 
-        print '__deepcopy__(%s)' % str(memo)
+        print(('__deepcopy__(%s)' % str(memo)))
         return simulate(copy.deepcopy(self, memo))
 
         fatal('return ORM(copy.deepcopy(dict(self)))')
@@ -2133,7 +2133,7 @@ class simulate:
         
         dbg_prnt(DBG_LVL_1, "Cloning current state at 0x%x ..." % self.__state.addr)
 
-        print 'RBX', self.__state.regs.rbx, self.__inireg['rbx'], self.__getreg('rbx')
+        print(('RBX', self.__state.regs.rbx, self.__inireg['rbx'], self.__getreg('rbx')))
         
 
         # TODO: That's a bad way to do it. Nevermind it works.
@@ -2162,22 +2162,22 @@ class simulate:
         # create hte simulation manager object
         simgr = self.__proj.factory.simulation_manager(thing=state_copy)
   
-        print 'Stashes', simgr.stashes
-        print 'Constraints', self.__state.se.constraints
+        print(('Stashes', simgr.stashes))
+        print(('Constraints', self.__state.se.constraints))
 
         
         # this should throw no exception (it was already successful in absblk.py)
         simgr.step()
 
-        print 'Stashes', simgr.stashes
+        print(('Stashes', simgr.stashes))
 
 
         # we should have exactly 2 active stashes
-        print simgr.active[0].se.constraints
-        print simgr.active[1].se.constraints
+        print((simgr.active[0].se.constraints))
+        print((simgr.active[1].se.constraints))
 
         if len(simgr.active) != 2:              
-            print simgr.active
+            print((simgr.active))
             raise Exception('Conditional jump state should have 2 active stashes')
        
 
@@ -2204,7 +2204,7 @@ class simulate:
 
         newsim.copy_locally()
 
-        print 'Constraints', self.__state.se.constraints
+        print(('Constraints', self.__state.se.constraints))
 
     
         self.__state.add_constraints( simgr.active[1].se.constraints[-1] )
@@ -2457,8 +2457,8 @@ class simulate:
     # :Ret: None.
     #
     def dump( self, output ):
-        # for a, b in self.__relative.iteritems():
-        #     print 'relative', hex(a), b
+        # for a, b in self.__relative.items():
+        #     print(('relative', hex(a), b))
 
         output.newline()
         
@@ -2492,7 +2492,7 @@ class simulate:
         #
         dbg_prnt(DBG_LVL_0, 'Apriori Register Assignments (if any):')
 
-        for reg, val in self.__reg.iteritems():
+        for reg, val in self.__reg.items():
             # tuples are not part of the constraints and therefore are dfor simu in self.__simstash:iscarded
             if not isinstance(val, tuple):
 
@@ -2505,12 +2505,12 @@ class simulate:
 
         output.newline()
 
-        for reg, symv in self.__inireg.iteritems():
+        for reg, symv in self.__inireg.items():
             # check if any of the original register is still in the constraints
             if symv != None:
                 symv = self.__make_relative(symv)
 
-                # print 'OUTPUT:', symv
+                # print(('OUTPUT:', symv))
                 output.register(reg, symv)
 
         
@@ -2529,7 +2529,7 @@ class simulate:
         output.newline()
 
         # variables
-        for addr, values in self.__inivar_rel.iteritems():
+        for addr, values in self.__inivar_rel.items():
 
             displacement = 0
 
@@ -2566,7 +2566,7 @@ class simulate:
         output.newline()
 
 
-        for addr, val in self.__mem.iteritems():
+        for addr, val in self.__mem.items():
             if isinstance(val, tuple):
 
                 # if val[0] in self.__relative:
@@ -2581,7 +2581,7 @@ class simulate:
                     # cast string to bytes and change endianess 
                     x = ''.join(reversed(x.decode('hex')))
 
-                    # print string in C-style format
+                    # print((string in C-style format))
                     pval = '{' + ', '.join("0x{0:02x}".format(ord(c)) for c in x) + '}'
                     #lval = ["0x{0:02x}".format(ord(c)) for c in x]
 
@@ -2589,8 +2589,8 @@ class simulate:
                 paddr = self.__make_relative(addr)                
                 #   output.memory(addr, '', addr, lval, op='+')
 
-                for a, b in self.__ext.iteritems():
-                    #print '^^^^^^^^^^', a, b, addr
+                for a, b in self.__ext.items():
+                    #print(('^^^^^^^^^^', a, b, addr))
                     if b != EXTERNAL_UNINITIALIZED and addr == b[0]:
                         output.comment('value comes from external input (DROP)')
                         break
@@ -2611,7 +2611,7 @@ class simulate:
         stdin, file, retn = [], [], []
 
 
-        for var, value in self.__ext.iteritems():
+        for var, value in self.__ext.items():
             if value == EXTERNAL_UNINITIALIZED:
                 continue
             
@@ -2646,8 +2646,8 @@ class simulate:
         output.comment('External input (return): %s' % str(retn))
         
 
-        # for a,b in self.__relative.iteritems():
-        #     print 'ADDR2SYM', hex(a), b
+        # for a,b in self.__relative.items():
+        #     print(('ADDR2SYM', hex(a), b))
 
 
         dbg_prnt(DBG_LVL_0, "pool_base  = 0x%x" % POOLVAR_BASE_ADDR)

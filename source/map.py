@@ -45,7 +45,6 @@
 from coreutils import *
 
 import networkx as nx
-import __builtin__                                  # to use the built-in map()
 import copy
 import re
 
@@ -83,7 +82,7 @@ class _match( object ):
             if self.__opposite(e[0]):               # if edge is (host, virtual) or (addr, var)
                 e = (e[1], e[0])                    # swap it to (virtual, host) or (var, addr)
                         
-            # print '!', e, M 
+            # print(('!', e, M ))
             if not e in M:                          # if edge not in M
                 DG.add_edge(e[1], e[0])             # add edge in reverse direction
 
@@ -302,7 +301,7 @@ class _match( object ):
         # 'rcx': '__r1', 'rax': '__r2'}. Each edge it appears both in forward and reverse 
         # direction. So, we only keep edges in one direction (V1 -> V2)
         #
-        # don't use .iteritems() (dictionary is modifed on the fly)
+        # don't use .items() (dictionary is modifed on the fly)
         for key, val in M.items():
             if self.__opposite(key):                # drop (host, virtual) (or (addr, var)) edges 
                 del M[key]
@@ -316,7 +315,7 @@ class _match( object ):
         # This is because bipartite.sets() algorithmically find the sets. So, if a node has no
         # edges it will classified in the 2nd set, even if it has attribute bipartite = 0. To
         # fix that we can either drop nodes with no edges, or to use an alternative:
-        virt = [u for u, b in nx.get_node_attributes(self.__G,'bipartite').iteritems() if not b]
+        virt = [u for u, b in nx.get_node_attributes(self.__G,'bipartite').items() if not b]
 
 
         # check if matching cover all virtual registers (or variables)
@@ -335,7 +334,7 @@ class _match( object ):
         # remove tuples from bitvector strings
         M = __builtin__.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple) else x, M)
 
-        # print 'M IS ', M
+        # print(('M IS ', M))
 
         # M is a the 1st maximum matching. Invoke callback
         # if self.__callback( sorted(M, key=lambda e: e[0]) ) < 0:
@@ -497,13 +496,13 @@ if __name__ == '__main__':                          # DEBUG ONLY
 #   ])
     
     def callback( m ):
-        print 'Got matching: ', m
+        print(('Got matching: ', m))
         return 0                                    # must return an non negative value
 
     m = _match( G, 'register' )
     m.enum_max_matchings( callback )
 
-    print '----------------------------------------'
+    print(('----------------------------------------'))
     m.enum_max_matchings_bf( callback, 4 )
 '''
 # -------------------------------------------------------------------------------------------------

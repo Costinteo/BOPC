@@ -34,7 +34,7 @@ import path as P
 import networkx as nx
 import textwrap
 import datetime
-import cPickle as pickle
+import pickle
 import math
 import numpy
 
@@ -158,7 +158,7 @@ class capability( object ):
 
                 return                              # your job is done here
 
-            except IOError, err:
+            except IOError as err:
                 # if you can't load it, simply re-calculate it ;)
 
                 error("Cannot load Capability Graph: %s" % str(err))
@@ -175,14 +175,14 @@ class capability( object ):
         p = P._cfg_shortest_path(self.__cfg)
 
 
-        for node, abstr in nx.get_node_attributes(self.__cfg.graph,'abstr').iteritems():
+        for node, abstr in nx.get_node_attributes(self.__cfg.graph,'abstr').items():
             addr = node.addr
 
             dbg_prnt(DBG_LVL_3, "Analyzing block at 0x%x (%d/%d)..." % (addr, counter, nnodes))
         
 
             if options & CAP_REGSET:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
 
                     if data['type'] == 'concrete':
                         self.__add(addr, ty='regset', reg=reg, val=data['const'], mode='const',
@@ -193,13 +193,13 @@ class capability( object ):
           
 
             if options & CAP_REGMOD:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
                     if data['type'] == 'mod':                                               
                         self.__add(addr, ty='regmod', reg=reg, op=data['op'], val=data['const'])
 
 
             if options & CAP_MEMRD:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
                     if data['type'] == 'deref' and data['memrd']:
                         loadreg = data['deps'][0]
 
@@ -244,7 +244,7 @@ class capability( object ):
                             except KeyError:
                                 continue
                 
-                            for reg, data in X['regwr'].iteritems():
+                            for reg, data in X['regwr'].items():
                                 if data['type'] == 'mod' and reg == R:
                                     regmod += 1
                                     step = data['const']
@@ -259,7 +259,7 @@ class capability( object ):
                                     pretty_list(loop))))
 
                         # else:
-                        #    print 'BAD LOOP (mod: %d, set: %d) (%d - %d - %s) %s' % \
+                        #    print(('BAD LOOP (mod: %d, set: %d) (%d - %d - %s) %s' % \))
                         #        (regmod, regset, abstr['cond']['const'], step, abstr['cond']['op'],
                         #        pretty_list(loop))
                 '''
@@ -411,7 +411,7 @@ class capability( object ):
                 nx.write_gpickle(self.__cap, self.__name + '.cap')
                 dbg_prnt(DBG_LVL_1, "Done. Capability Graph saved as %s" % self.__name + '.cap')
 
-            except IOError, err:
+            except IOError as err:
                 error("Cannot save Capability Graph: %s" % str(err))
 
 
@@ -481,7 +481,7 @@ class capability( object ):
            
             dbg_prnt(DBG_LVL_1, "Done. Capability Graph saved as %s" % self.__name + '.stmt')
 
-        except IOError, err:
+        except IOError as err:
             error("Cannot create statements file: %s" % str(err))
 
 
@@ -599,7 +599,7 @@ class capability( object ):
                 for island in self.__islands:       # perform the analysis to every island
                     func( island['graph'] )
 
-            except KeyError, err:
+            except KeyError as err:
                 fatal('Unknow analysis %s' % str(err))
 
 
@@ -642,7 +642,7 @@ class capability( object ):
 
                 func( self.__islands[ island_id ]['graph'] )
 
-            except KeyError, err:
+            except KeyError as err:
                 fatal('Unknow analysis %s' % str(err))
 
 

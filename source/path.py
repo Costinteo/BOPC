@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -268,7 +268,7 @@ class _cs_ksp_intrl( object ):
                     path = rootpath[:-1] + spurpath
 
                     # append lengths of the root path to the spur path
-                    pathlens = L[k-1][:i] + map(lambda l: l + rootpathlen, spurpathlens)
+                    pathlens = L[k-1][:i] + [l + rootpathlen for l in spurpathlens]
 
                     # do the same with expanded (sub)paths
                     expaths = E[k-1][:i][:]
@@ -308,10 +308,10 @@ class _cs_ksp_intrl( object ):
 
                 # add back the edges and nodes that have been "deleted" from the graph.                     
                 # (simply delete "avoid" attributes from them)
-                for node, _ in nx.get_node_attributes(self.__G, 'avoid').items(): 
+                for node, _ in list(nx.get_node_attributes(self.__G, 'avoid').items()): 
                     del self.__G.node[ node ]['avoid']                  
             
-                for edge, _ in nx.get_edge_attributes(self.__G, 'avoid').items():                   
+                for edge, _ in list(nx.get_edge_attributes(self.__G, 'avoid').items()):                   
                     del self.__G[ edge[0] ][ edge[1] ]['avoid']
 
 
@@ -1065,7 +1065,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         #   nonclob = [root.addr] + [final.addr for final in finals]
 
         # exclude clobbering blocks from search (mark them so they can be avoided)
-        for addr, uidlist in self.__clobbering.iteritems():            
+        for addr, uidlist in self.__clobbering.items():            
             # if addr not in nonclob and not disjoint(set(uidlist), clobs):
             if not disjoint(set(uidlist), clobs):
                 self.__G.node[ ADDR2NODE[addr] ]['clobbering'] = 1
@@ -1080,7 +1080,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         try:
             # get shortest paths to all final nodes (ignore the return nodes)
             paths, _ = self.__dijkstra_variant_rcsv(root, finals, precall_stack=precall_stack)
-        except Exception, e:                        # just in case that something goes wrong                       
+        except Exception as e:                        # just in case that something goes wrong                       
             traceback.print_exc()                   # print exception trace
             fatal('Unexpected exception in __dijkstra_variant_rcsv(): %s' % str(e))
 
@@ -1088,7 +1088,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         # print function depths (DBG_LVL_4 only)        
         dbg_prnt(DBG_LVL_4, '\tFunction Depths:')
 
-        for func, (depth, path) in self.__funcdepth.iteritems():
+        for func, (depth, path) in self.__funcdepth.items():
             dbg_prnt(DBG_LVL_4, '%32s: %2d (%s)' % (func.name, depth, pretty_list(path)))
 
 
@@ -1104,7 +1104,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
                                     (root.addr, final.addr))
 
         # clean up clobbering nodes
-        for node, _ in nx.get_node_attributes(self.__G, 'clobbering').items(): 
+        for node, _ in list(nx.get_node_attributes(self.__G, 'clobbering').items()): 
             del self.__G.node[ node ]['clobbering']                  
 
 
@@ -1139,10 +1139,10 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         # In this case the 'depth' of each function depends on the initial entry
         # point.
         # ---------------------------------------------------------------------
-        for n, _ in nx.get_edge_attributes(self.__G, 'depth').items():
+        for n, _ in list(nx.get_edge_attributes(self.__G, 'depth').items()):
             del self.__G.edge[ n[0] ][ n[1] ]['depth']
 
-        for n, _ in nx.get_edge_attributes(self.__G, 'path').items():
+        for n, _ in list(nx.get_edge_attributes(self.__G, 'path').items()):
             del self.__G.edge[ n[0] ][ n[1] ]['path']
 
 
@@ -1267,7 +1267,7 @@ class _cfg_shortest_path( _cs_ksp_intrl ):
         self.__radj = mk_reverse_adj(adj)           # build the reverse adjacency list
 
         # build a suitable dictionary with clobbering blocks
-        for uid, addrs in clobbering.iteritems():
+        for uid, addrs in clobbering.items():
             for addr in addrs:
                 self.__clobbering.setdefault(addr, []).append(uid)
        

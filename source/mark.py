@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -47,16 +47,16 @@ import absblk as A
 
 import angr
 import claripy
-import simuvex
 
 import networkx as nx
 
 import struct
 import copy
-import cPickle as pickle
+import pickle as pickle
 import pprint
 import math
 import re
+import traceback
 
 
 
@@ -82,7 +82,7 @@ class mark( object ):
         # Count only abstracted basic blocks
         # ---------------------------------------------------------------------
         if which == 'abstract':
-            return len(nx.get_node_attributes(self.__cfg.graph, 'abstr').items())
+            return len(list(nx.get_node_attributes(self.__cfg.graph, 'abstr').items()))
 
         # ---------------------------------------------------------------------
         # All method
@@ -92,7 +92,7 @@ class mark( object ):
         elif which == 'all':
             cnt = 0                                 # initialize counter
 
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 # skip functions that are outside of the main_object, e.g.:
                 #   <ExternObject Object cle##externs, maps [0x1000000:0x1008000]>,
                 #   <KernelObject Object cle##kernel,  maps [0x3000000:0x3008000]>
@@ -136,7 +136,7 @@ class mark( object ):
         # ---------------------------------------------------------------------
         if method == 'block':
             # iterate over each function
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 # skip functions that are outside of the main_object, e.g.:
                 #   <ExternObject Object cle##externs, maps [0x1000000:0x1008000]>,
                 #   <KernelObject Object cle##kernel,  maps [0x3000000:0x3008000]>
@@ -163,7 +163,7 @@ class mark( object ):
             avoid_addr = { }                        # set of avoided functions
 
             # iterate over each function
-            for addr, func in self.__cfg.kb.functions.iteritems():
+            for addr, func in self.__cfg.kb.functions.items():
                 if func.name in avoid:
                     avoid_addr[ addr ] = 1          # mark blocks that you want to avoid
 
@@ -189,7 +189,7 @@ class mark( object ):
         # Iterate over abstracted basic blcoks
         # ---------------------------------------------------------------------
         elif method == 'abstract':
-            for node, attr in nx.get_node_attributes(self.__cfg.graph, 'abstr').iteritems(): 
+            for node, attr in nx.get_node_attributes(self.__cfg.graph, 'abstr').items(): 
                 yield node, attr                    # return tuple for the abstracted block
 
 
@@ -334,7 +334,7 @@ class mark( object ):
         self.__rg.add_nodes_from(HARDWARE_REGISTERS, bipartite=1)
 
         # create a mapping between basic blocks (nodes) and their entry points (addresses)
-        for node, _ in self.__cfg.graph.node.iteritems():
+        for node in self.__cfg.graph.nodes():
             self.__m[ node.addr ] = node
 
 
@@ -373,7 +373,9 @@ class mark( object ):
 
                 del abstr                           # release object to save memory
 
-            except Exception, err:
+            except Exception as err:
+                # print traceback
+                #traceback.print_tb(err.__traceback__)
                 warn("Symbolic Execution at block 0x%x failed: '%s' Much sad :( "
                      "Skipping current block..." % (addr, str(err)))
 
@@ -411,11 +413,11 @@ class mark( object ):
 
 
         # collect all abstractions
-        for node, attr in nx.get_node_attributes(self.__cfg.graph,'abstr').iteritems(): 
+        for node, attr in nx.get_node_attributes(self.__cfg.graph,'abstr').items(): 
             abstr[node.addr] = attr
 
         # collect all failures
-        for node, _ in nx.get_node_attributes(self.__cfg.graph,'fail').iteritems(): 
+        for node, _ in nx.get_node_attributes(self.__cfg.graph,'fail').items(): 
             fail.add(node.addr)
 
         try:
@@ -424,7 +426,7 @@ class mark( object ):
             pickle.dump(fail,  output, 0)
             output.close()
 
-        except IOError, err:                        # error is not fatal, so don't abort program
+        except IOError as err:                        # error is not fatal, so don't abort program
             warn("Cannot save abstractions: %s" % str(err))
             return False
 
@@ -456,7 +458,7 @@ class mark( object ):
             # pprint.pprint(abstr)
             pklfile.close()
 
-        except IOError, err:                        # error is fatal, as we can't proceed
+        except IOError as err:                        # error is fatal, as we can't proceed
             fatal("Cannot load abstractions: %s" % str(err))
             
 
@@ -564,7 +566,7 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 if stmt['type'] == 'regset' and not isinstance(stmt['val'], tuple):
                     
-                    for reg, data in abstr['regwr'].iteritems():
+                    for reg, data in abstr['regwr'].items():
                      #   print '{',  reg, data
 
                         # apply register filter
@@ -575,7 +577,7 @@ class mark( object ):
                             dbg_prnt(DBG_LVL_3, "Statement match! (__r%d) %%%s = 0x%x" % 
                                                 (stmt['reg'], reg, data['const']) )
 
-                            if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']]:
+                            if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']]:
                                 self.__rg.add_edge('__r%d' % stmt['reg'], reg)
                             
                             # a candidate block has found
@@ -588,7 +590,7 @@ class mark( object ):
                             dbg_prnt(DBG_LVL_3, "Statement match! (__r%d) %%%s = [%s]" % 
                                                 (stmt['reg'], reg, data['addr']) )
 
-                            if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']]:
+                            if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']]:
                                 self.__rg.add_edge('__r%d' % stmt['reg'], reg)
 
                             # a candidate block has found
@@ -598,7 +600,7 @@ class mark( object ):
                                             } )
 
 
-                            for a, b in abstr['symvars'].iteritems():
+                            for a, b in abstr['symvars'].items():
                                 # SYM2ADDR[a] = b
 
                                 SYM2ADDR[a.shallow_repr()] = b
@@ -622,7 +624,7 @@ class mark( object ):
                 elif stmt['type'] == 'regset' and isinstance(stmt['val'], tuple):
 
                     #
-                    for reg, data in abstr['regwr'].iteritems():
+                    for reg, data in abstr['regwr'].items():
                     #    print '&&',  reg, data
 
                         # apply register filter
@@ -667,7 +669,7 @@ class mark( object ):
                             var.add( (stmt['val'][0], data['const']) )
 
 
-                            if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']] or\
+                            if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']] or\
                                 self.__rg.has_edge('__r%d' % stmt['reg'], reg):
                                     self.__rg.add_edge('__r%d' % stmt['reg'], reg, var=var)
 
@@ -750,7 +752,7 @@ class mark( object ):
                                 var.add( (stmt['val'][0], (addrstr,)) )
 
 
-                                if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']] or\
+                                if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']] or\
                                     self.__rg.has_edge('__r%d' % stmt['reg'], reg):
                                         self.__rg.add_edge('__r%d' % stmt['reg'], reg, var=var)
 
@@ -761,7 +763,7 @@ class mark( object ):
                                                 # 'mem':(data['addr'], stmt['val'])
                                                 } )
 
-                                for a, b in abstr['symvars'].iteritems():
+                                for a, b in abstr['symvars'].items():
                                     SYM2ADDR[a.shallow_repr()] = b
 
                                     STR2BV  [a.shallow_repr()] = a
@@ -778,7 +780,7 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'regmod':
 
-                    for reg, data in abstr['regwr'].iteritems():
+                    for reg, data in abstr['regwr'].items():
                      #   print '{',  reg, data
 
                         # apply register filter
@@ -792,7 +794,7 @@ class mark( object ):
                                                 (stmt['reg'], reg, data['op'], data['const']))
                                                
 
-                                if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']]:
+                                if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']]:
                                     self.__rg.add_edge('__r%d' % stmt['reg'], reg)
 
                                 match.append( reg ) # a perfect match has found
@@ -805,7 +807,7 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'memrd':
                 
-                    for reg, data in abstr['regwr'].iteritems():
+                    for reg, data in abstr['regwr'].items():
 
                         # apply register filter
                         if not self.__reg_filter(reg): continue
@@ -820,8 +822,8 @@ class mark( object ):
                                             (stmt['reg'], reg, stmt['mem'], loadreg))
                                   
 
-                            if 'immutable' not in self.__rg.node['__r%d' % stmt['reg']] and \
-                               'immutable' not in self.__rg.node['__r%d' % stmt['mem']]:
+                            if 'immutable' not in self.__rg.nodes['__r%d' % stmt['reg']] and \
+                               'immutable' not in self.__rg.nodes['__r%d' % stmt['mem']]:
                                     self.__rg.add_edge('__r%d' % stmt['reg'], reg)
                                     self.__rg.add_edge('__r%d' % stmt['mem'], loadreg)
 
@@ -838,7 +840,7 @@ class mark( object ):
                 elif stmt['type'] == 'memwr':
                     
                     for memwr in abstr['splmemwr']:
-                        print 'MEMWR', memwr
+                        print('MEMWR', memwr)
                         # apply register filters
                         if not self.__reg_filter(memwr['mem']) or \
                            not self.__reg_filter(memwr['val']):
@@ -852,8 +854,8 @@ class mark( object ):
                                         (stmt['mem'], memwr['mem'], stmt['val'], memwr['val']))
                               
 
-                        if 'immutable' not in self.__rg.node['__r%d' % stmt['mem']] and \
-                           'immutable' not in self.__rg.node['__r%d' % stmt['val']]:
+                        if 'immutable' not in self.__rg.nodes['__r%d' % stmt['mem']] and \
+                           'immutable' not in self.__rg.nodes['__r%d' % stmt['val']]:
                                 self.__rg.add_edge('__r%d' % stmt['mem'], memwr['mem'])
                                 self.__rg.add_edge('__r%d' % stmt['val'], memwr['val'])
 
@@ -1022,7 +1024,7 @@ class mark( object ):
                             if isinstance(val, tuple) and val[0] != fval:
                                 Vg['var'].remove( (var, val) )
 
-                            elif isinstance(val, long) and str(val) != fval:                                
+                            elif isinstance(val, int) and str(val) != fval:                                
                                 Vg['var'].remove( (var, val) )
 
 
@@ -1030,12 +1032,12 @@ class mark( object ):
         # -------------------------------------------------------------------------------
         # check if you have a sufficient number of candidate blocks
         # -------------------------------------------------------------------------------
-        print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', len(self.__ir)
+        print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', len(self.__ir))
         # for i,j in self.__rg.edge.iteritems(): print i, j
 
         cnt = set()
 
-        for n, c in nx.get_node_attributes(self.__cfg.graph,'cand').iteritems(): 
+        for n, c in nx.get_node_attributes(self.__cfg.graph,'cand').items(): 
             # print '0x%x' % n.addr, c
 
             for a, _ in c:
@@ -1043,8 +1045,8 @@ class mark( object ):
 
 
         if len(cnt) < self.__ir.nreal:
-            print len(cnt), cnt 
-            print self.__ir.nreal
+            print(len(cnt), cnt) 
+            print(self.__ir.nreal)
             error("Not enough candidate blocks")
             return False
 
@@ -1095,8 +1097,8 @@ class mark( object ):
         dbg_prnt(DBG_LVL_1, "Searching for accepted basic blocks...")
 
         # clear potential leftovers from previous attempts
-        for node, _ in nx.get_node_attributes(self.__cfg.graph,'acc').items(): 
-            del self.__cfg.graph.node[node]['acc']
+        for node, _ in list(nx.get_node_attributes(self.__cfg.graph,'acc').items()): 
+            del self.__cfg.graph.nodes[node]['acc']
 
 
         rmap = { vr:hw    for vr,hw    in rmap }    # cast them to dictionaries to ease searching
@@ -1112,7 +1114,7 @@ class mark( object ):
         # iterate over candidate basic blocks
         #
         # <CFGNode main+0xff 0x4007e6L[24]> [(4, ['rax']), (3, [('rsi', 576460752303358064L)])]
-        for node, attr in nx.get_node_attributes(self.__cfg.graph,'cand').iteritems(): 
+        for node, attr in nx.get_node_attributes(self.__cfg.graph,'cand').items(): 
             # dbg_prnt(DBG_LVL_3, "Analyzing candidate block at 0x%x..." % node.addr)
        
 
@@ -1147,7 +1149,7 @@ class mark( object ):
 
 
                         # case #2: rax = 0x7fffffffffeffe8
-                        elif isinstance(cand['addr'], long):
+                        elif isinstance(cand['addr'], int):
                             if vmap[ stmt['val'][0] ] == cand['addr']:
                                 acc.append( stmt['uid'] )
                                 isok = True
@@ -1170,7 +1172,7 @@ class mark( object ):
                     if isok and cand['deps']:      # are there dependencies?
                         pass
                         # make sure that dependencies are not reserved registers
-                        if filter(lambda reg: reg in cand['deps'], rmap.values()):
+                        if [reg for reg in list(rmap.values()) if reg in cand['deps']]:
                             pass
  
                             # this block uses a reserved register. It cannot be accepted for that
@@ -1224,7 +1226,7 @@ class mark( object ):
                 dbg_prnt(DBG_LVL_4, "Block 0x%x is accepted for statement(s): %s" %
                                       (node.addr, ', '.join(sorted(map(str, acc))) ) )
                 
-                self.__cfg.graph.node[node]['acc'] = acc
+                self.__cfg.graph.nodes[node]['acc'] = acc
                 
                 for a in acc:           
                     accepted.setdefault(a, []).append(node.addr)
@@ -1262,13 +1264,13 @@ class mark( object ):
     def mark_clobbering( self, rmap, vmap ):
         dbg_prnt(DBG_LVL_1, "Searching for clobbering basic blocks...")
 
-        rmap = dict( map(reversed, rmap) )          # cast them to dictionaries to ease searching
-        vmap = dict( map(reversed, vmap) )          # (reverse mappings)
+        rmap = dict( list(map(reversed, rmap)) )          # cast them to dictionaries to ease searching
+        vmap = dict( list(map(reversed, vmap)) )          # (reverse mappings)
 
 
         # clear potential leftovers from previous attempts
-        for node, _ in nx.get_node_attributes(self.__cfg.graph,'clob').items(): 
-            del self.__cfg.graph.node[node]['clob']
+        for node, _ in list(nx.get_node_attributes(self.__cfg.graph,'clob').items()): 
+            del self.__cfg.graph.nodes[node]['clob']
 
 
         clobbering = { }
@@ -1292,7 +1294,7 @@ class mark( object ):
             # Clobbering blocks are dynamic. Write more...
             #
             try:
-                acc = self.__cfg.graph.node[node]['acc']
+                acc = self.__cfg.graph.nodes[node]['acc']
             except KeyError:
                 acc = []
 
@@ -1316,7 +1318,7 @@ class mark( object ):
                         # print addr, ex
                         if addr.shallow_repr() in vmap and vmap[addr.shallow_repr()] == stmt['name']:
                             # block is clobbering
-                            print hex(node.addr), 'clob for varset'
+                            print(hex(node.addr), 'clob for varset')
                             clob.add(stmt['uid'])
                             fatal('I should come back to that')
                             '''
@@ -1352,7 +1354,7 @@ class mark( object ):
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'regset' or stmt['type'] == 'regmod':
                     #for reg in [r for r in abstr['regwr'].keys() if 1]:
-                    for reg in abstr['regwr'].keys():
+                    for reg in list(abstr['regwr'].keys()):
 
                        # print reg, stmt, acc
 
@@ -1368,7 +1370,7 @@ class mark( object ):
                 # Statement 'memrd'                
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'memrd':                    
-                    for reg in abstr['regwr'].keys():
+                    for reg in list(abstr['regwr'].keys()):
                         if reg in rmap and \
                             (rmap[reg] == '__r%d' % stmt['reg'] or \
                              rmap[reg] == '__r%d' % stmt['mem']) \
@@ -1381,7 +1383,7 @@ class mark( object ):
                 # Statement 'memwr'
                 # -----------------------------------------------------------------------
                 elif stmt['type'] == 'memwr':                    
-                    for reg in abstr['regwr'].keys():
+                    for reg in list(abstr['regwr'].keys()):
                         if reg in rmap and \
                             (rmap[reg] == '__r%d' % stmt['mem'] or \
                              rmap[reg] == '__r%d' % stmt['val'])\
@@ -1449,7 +1451,7 @@ class mark( object ):
                                      (node.addr,  counter, nnodes, # pretty_list(clob, ', ', dec)))                
                                                          ', '.join(sorted(map(str, clob)))) )
                 
-                self.__cfg.graph.node[node]['clob'] = clob
+                self.__cfg.graph.nodes[node]['clob'] = clob
                 
                 for c in clob:          
                     clobbering.setdefault(c, []).append(node.addr)

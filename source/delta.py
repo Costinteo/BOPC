@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -375,7 +375,7 @@ class delta( P._cs_ksp_intrl ):
         # build the reverse adjacency list
         self.__radj = { }
 
-        for a, b in self.__adj.iteritems():
+        for a, b in self.__adj.items():
             for c in b:
                 self.__radj.setdefault(c, []).append(a)
 
@@ -394,7 +394,7 @@ class delta( P._cs_ksp_intrl ):
         for uid, cur in accepted:                   # for each next level
 
             # if any node is not a valid basic block address, abort
-            if len(filter(lambda n : n not in ADDR2NODE and n != -1, cur)): 
+            if len([n for n in cur if n not in ADDR2NODE and n != -1]): 
                 raise Exception('Node is not a valid address')
 
 
@@ -409,7 +409,7 @@ class delta( P._cs_ksp_intrl ):
             #
             # To avoid this situation, we index nodes using a tuple (uid, address). 
             #
-            self.__d.add_nodes_from( zip([uid]*len(cur), cur) )
+            self.__d.add_nodes_from( list(zip([uid]*len(cur), cur)) )
 
                        
             if uid not in self.__adj:               # the last layer (statement) has no neighbors
@@ -609,7 +609,7 @@ class delta( P._cs_ksp_intrl ):
         # build the reverse adjacency list
         self.__radj = { }
 
-        for a, b in self.__adj.iteritems():
+        for a, b in self.__adj.items():
             for c in b:
                 self.__radj.setdefault(c, []).append(a)
 

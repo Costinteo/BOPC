@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -73,7 +73,7 @@ class search:
                 for src in r_adj[ stmt['uid'] ]:
 
                     # remove edges that point to the goto
-                    adj[src]  = filter(lambda x : x != stmt['uid'], adj[src])                    
+                    adj[src]  = [x for x in adj[src] if x != stmt['uid']]                    
                     adj[src] += adj[stmt['uid']]    # add the bypass edge
 
                     # if we have multiple gotos chained together, also fix the 'target' attribute
@@ -150,7 +150,7 @@ class search:
     def __mk_reverse_adjacency_list( self, adj ):
         rev_adj = { }
 
-        for a, b in adj.iteritems():
+        for a, b in adj.items():
             for c in b:
                 rev_adj.setdefault(c, []).append(a)
 
@@ -254,7 +254,7 @@ class search:
     #
     def __enum_tree( self, tree, simulation, path=[], prev_uid=-1, totpath=set()  ):
 
-        print 'TREE', tree
+        print('TREE', tree)
         #return 0
 
 
@@ -330,8 +330,8 @@ class search:
             #
             # So, in case of a gap, just throw an exception
  
-            print uid, self.__IR[uid], tree[0], self.__adj
-            print 'PATH', path, [p[2] for p in path] #, self.__adj[ uid ][0]
+            print(uid, self.__IR[uid], tree[0], self.__adj)
+            print('PATH', path, [p[2] for p in path]) #, self.__adj[ uid ][0]
 
             # if currb == nextb: step() && simu_edge(step().addr, nextb) (to go back)
             loopback = False
@@ -402,7 +402,7 @@ class search:
             X = self.__enum_tree(tree[0][0], simulation,  path, prev_uid, totpath)
 
             warn('------------------------------- SECOND ---------------------------')
-            print simulation_2.constraints()
+            print(simulation_2.constraints())
 
             if X < 0 or \
                self.__enum_tree(tree[0][1], simulation_2, path, prev_uid, totpath) < 0:
@@ -434,7 +434,7 @@ class search:
         dbg_prnt(DBG_LVL_1, 'Checking whether stashes are consistent ...')
 
         for simu in self.__simstash:
-            print 'Simulation', simu, simu.constraints()
+            print('Simulation', simu, simu.constraints())
 
             # ispo: you're fixed ;)
             # error('__consistent_stashes says: fix me ispo!!!!!')
@@ -453,7 +453,7 @@ class search:
                 sim_b.update_globals()
 
                 # self.__inireg[ reg ] = val
-                for a, b in sim_a.inireg.iteritems():
+                for a, b in sim_a.inireg.items():
                     if b == None:
                         continue
                     
@@ -465,7 +465,7 @@ class search:
                         return False
 
     
-                for a, b in sim_a.mem.iteritems():
+                for a, b in sim_a.mem.items():
                     if not b:                       # skip unneeded memory writes
                         continue
 
@@ -489,7 +489,7 @@ class search:
 
 
                 # self.__ext[ var ] = (addr, value)
-                for a, b in sim_a.ext.iteritems():
+                for a, b in sim_a.ext.items():
                     
 
                     if a.shallow_repr() in sim_b.ext and sim_b.ext[a.shallow_repr()] != b:
@@ -498,12 +498,12 @@ class search:
 
                         return False
 
-        for a, b in sim_a.mem.iteritems():
-            print 'MEM A', hex(a), b
+        for a, b in sim_a.mem.items():
+            print('MEM A', hex(a), b)
 
-        print '---------------------------------------------------------'
-        for a, b in sim_b.mem.iteritems():
-            print 'MEM B', hex(a), b
+        print('---------------------------------------------------------')
+        for a, b in sim_b.mem.items():
+            print('MEM B', hex(a), b)
 
         # Assume they're ok for now...
         return True
@@ -562,7 +562,7 @@ class search:
         emph('\tRegisters: %s' % ' | '.join(s), DBG_LVL_1)
 
 
-        s = ['%s <-> %s' % (bolds(var), bolds(hex(val) if isinstance(val, long) else str(val))) 
+        s = ['%s <-> %s' % (bolds(var), bolds(hex(val) if isinstance(val, int) else str(val))) 
                     for var, val in varmap]
         emph('\tVariables: %s' % ' | '.join(s), DBG_LVL_1)
 
@@ -638,13 +638,13 @@ class search:
         # --------------------------------------------------------------------- 
         dbg_prnt(DBG_LVL_2, 'Accepted block set (uid/block):')
 
-        for a,b in sorted(accblks.iteritems()):
+        for a,b in sorted(accblks.items()):
             dbg_prnt(DBG_LVL_2, '\t%s: %s' % (bold(a, pad=3), ', '.join(['0x%x' % x for x in b])))
 
 
         dbg_prnt(DBG_LVL_3, 'Clobbering block set (uid/block):')
 
-        for a,b in sorted(cloblks.iteritems()):
+        for a,b in sorted(cloblks.items()):
             dbg_prnt(DBG_LVL_3, '\t%s: %s' % (bold(a, pad=3), ', '.join(['0x%x' % x for x in b])))
 
 
@@ -664,7 +664,7 @@ class search:
             # remove goto statements as they are problematic
             adj, rm = self.__remove_goto(accblks, adj)
 
-            perm = filter(lambda x : x not in rm, perm)
+            perm = [x for x in perm if x not in rm]
             perm = [(y, accblks[y]) for y in perm]
 
             dbg_arb(DBG_LVL_3, "Updated SPL statement adjacency list", adj)
@@ -756,7 +756,7 @@ class search:
                     # create the simulation object
                     simulation = S.simulate(self.__proj, self.__cfg, cloblks, adj, self.__IR,
                                             regmap, varmap, rsvp, entry)
-                except Exception, e:
+                except Exception as e:
                     dbg_prnt(DBG_LVL_2, "Cannot create simulation object. Discard current Hk")
                     continue
 
@@ -799,13 +799,13 @@ class search:
                     #           paths=self.__total_path)
                     # exit()
 
-                    print rainbow(textwrap.dedent('''\n\n
+                    print(rainbow(textwrap.dedent('''\n\n
                             $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $
                             $                                                                     $
                             $                 *** S O L U T I O N   F O U N D ***                 $
                             $                                                                     $
                             $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $ $
-                            '''))
+                            ''')))
 
 
                     emph(bolds('Solution #%d' % self.__nsolutions))
@@ -817,7 +817,7 @@ class search:
                     output.comment('Solution #%d' % self.__nsolutions)
                     output.comment('Mapping #%d' % self.__ctr)
                     output.comment('Registers: %s' % ' | '.join(['%s <-> %s' % (virt, real) for virt, real in regmap]))
-                    output.comment('Variables: %s' % ' | '.join(['%s <-> %s' % (var, hex(val) if isinstance(val, long) else str(val)) for var, val in varmap]))
+                    output.comment('Variables: %s' % ' | '.join(['%s <-> %s' % (var, hex(val) if isinstance(val, int) else str(val)) for var, val in varmap]))
      
                     output.comment('')
                     output.comment('Simulated Trace: %s' % pretty_tree)

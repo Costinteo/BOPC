@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -292,7 +292,7 @@ def load( filename ):
     CFG.normalize()
 
     # normalize every function object as well
-    for _, func in project.kb.functions.iteritems():
+    for _, func in project.kb.functions.items():
         if not func.normalized:
             dbg_prnt(DBG_LVL_4, "Normalizing function '%s' ..." % func.name)
             func.normalize()
@@ -310,7 +310,7 @@ def load( filename ):
 
 
     # create a quick mapping between basic block addresses and their corresponding functions
-    for _, func in CFG.functions.iteritems():       # for each function
+    for _, func in CFG.functions.items():       # for each function
         for addr in func.block_addrs:               # for each basic block in that function
             ADDR2FUNC[ addr ] = func
 
@@ -396,7 +396,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------------------
     # Display banner
     # -------------------------------------------------------------------------
-    print rainbow(textwrap.dedent('''
+    print(rainbow(textwrap.dedent('''
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                    %
         %                :::::::::   ::::::::  :::::::::   ::::::::          %
@@ -410,10 +410,10 @@ if __name__ == '__main__':
         %                Block Oriented Programming Compiler                 %
         %                                                                    %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        '''))
+        ''')))
 
-    print comments
-    print "[*] Starting BOPC %s at %s" % (VERSION, bolds(now.strftime("%d/%m/%Y %H:%M")))
+    print(comments)
+    print("[*] Starting BOPC %s at %s" % (VERSION, bolds(now.strftime("%d/%m/%Y %H:%M"))))
 
 
     # -------------------------------------------------------------------------
@@ -446,10 +446,10 @@ if __name__ == '__main__':
         if abstract(mark, args.abstractions, args.binary) > -1:
             entry = int(args.entry, 0)              # get entry point
 
-            X = mark.mark_candidate(sorted(map(lambda s : tuple(s.split('=')), args.mapping)))
+            X = mark.mark_candidate(sorted([tuple(s.split('=')) for s in args.mapping]))
 
             if not X:
-                print 'abort';
+                print('abort');
                 exit()
 
 
@@ -465,7 +465,7 @@ if __name__ == '__main__':
                     'format'     : args.format,
                     'solutions'  : args.findall,
                     'mapping-id' : int(args.mapping_id),
-                    'mapping'    : sorted(map(lambda s : tuple(s.split('=')), args.mapping)),
+                    'mapping'    : sorted([tuple(s.split('=')) for s in args.mapping]),
                     'filename'   : '%s-%s' % (args.binary, payload_name),
                     'enum'       : args.enum_mappings,
 
@@ -551,7 +551,7 @@ if __name__ == '__main__':
         for a, b in abstr:
             if a == 'regwr':
                 dbg_prnt(DBG_LVL_0, '%14s :' % a)
-                for c, d in b.iteritems():
+                for c, d in b.items():
                     dbg_prnt(DBG_LVL_0, '\t\t%s = %s' % (c, str(d)))
 
             else:

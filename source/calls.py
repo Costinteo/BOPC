@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -142,7 +142,7 @@ call_groups__ = [
 #       is returned.
 #
 def find_syscall( name ):
-    call = filter(lambda call: call[0] == name, syscalls__)
+    call = [call for call in syscalls__ if call[0] == name]
 
     if len(call) == 0:
         return None
@@ -163,7 +163,7 @@ def find_syscall( name ):
 #       is returned.
 #
 def find_libcall( name ):
-    call = filter(lambda call: call[0] == name, libcalls__)
+    call = [call for call in libcalls__ if call[0] == name]
 
     if len(call) == 0:
         return None

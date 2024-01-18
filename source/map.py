@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -45,7 +45,7 @@
 from coreutils import *
 
 import networkx as nx
-import __builtin__                                  # to use the built-in map()
+import builtins                                  # to use the built-in map()
 import copy
 import re
 
@@ -118,7 +118,7 @@ class _match( object ):
             Mprime += [e for e in M if e not in cycle]
 
             # remove tuples from bitvector strings
-            Mprime = __builtin__.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple)   
+            Mprime = builtins.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple)   
                                                                else x, Mprime)
 
 
@@ -170,7 +170,7 @@ class _match( object ):
 
 
             # remove tuples from bitvector strings
-            Mprime = __builtin__.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple)   
+            Mprime = builtins.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple)   
                                                                else x, Mprime)
 
 
@@ -272,7 +272,7 @@ class _match( object ):
         try:                                        
             self.__mode, self.__opposite = mode, {
                 'register' : lambda key : not re.match(r'^__r.$', key),
-                'variable' : lambda key : isinstance(key, long) or isinstance(key, tuple)
+                'variable' : lambda key : isinstance(key, int) or isinstance(key, tuple)
             }[ mode ]
         except KeyError: 
             fatal("Invalid mode '%s'" % mode )      # invalid mode
@@ -303,11 +303,11 @@ class _match( object ):
         # direction. So, we only keep edges in one direction (V1 -> V2)
         #
         # don't use .iteritems() (dictionary is modifed on the fly)
-        for key, val in M.items():
+        for key, val in list(M.items()):
             if self.__opposite(key):                # drop (host, virtual) (or (addr, var)) edges 
                 del M[key]
 
-        M = M.items()                               # cast dictionary to list (for convenience)
+        M = list(M.items())                               # cast dictionary to list (for convenience)
 
 
         # To get the number of virtual registers in the graph we can't use this:
@@ -316,7 +316,7 @@ class _match( object ):
         # This is because bipartite.sets() algorithmically find the sets. So, if a node has no
         # edges it will classified in the 2nd set, even if it has attribute bipartite = 0. To
         # fix that we can either drop nodes with no edges, or to use an alternative:
-        virt = [u for u, b in nx.get_node_attributes(self.__G,'bipartite').iteritems() if not b]
+        virt = [u for u, b in nx.get_node_attributes(self.__G,'bipartite').items() if not b]
 
 
         # check if matching cover all virtual registers (or variables)
@@ -333,7 +333,7 @@ class _match( object ):
         # Because bitvectors are strings at this point, no exceptions are thrown
 
         # remove tuples from bitvector strings
-        M = __builtin__.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple) else x, M)
+        M = builtins.map(lambda x : (x[0],x[1][0]) if isinstance(x[1], tuple) else x, M)
 
         # print 'M IS ', M
 

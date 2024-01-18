@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -193,7 +193,7 @@ class compile( object ):
     # :Ret: None.
     #
     def __multi_re( self, stmt, regex, err ):
-        stmt, lno = zip(*stmt)
+        stmt, lno = list(zip(*stmt))
 
         if len(stmt) != len(regex):                 # check if parameters match
             self.__syn_err( "Invalid number of parameters", lno[0] )
@@ -214,7 +214,7 @@ class compile( object ):
     #
     def __ir_add( self, tup ):
         # extend statement and add it to IR (along with its pc)
-        self.__ir.append( ['@__' + str(self.__pc), dict([('uid',self.__uid)] + tup.items())] )
+        self.__ir.append( ['@__' + str(self.__pc), dict([('uid',self.__uid)] + list(tup.items()))] )
 
         # __pc and __uid are equal for now, but they're going be different after optimization.
         self.__pc  = self.__pc  + _STEP_UP          # increase program counter
@@ -237,7 +237,7 @@ class compile( object ):
     #
     def __check_prog_state( func ):
         def stmt_intrl( self, stmt ):
-            dbg_prnt(DBG_LVL_3, "Parsing statement: " + ' '.join(zip(*stmt)[0]))
+            dbg_prnt(DBG_LVL_3, "Parsing statement: " + ' '.join(next(zip(*stmt))))
 
             if self.__state != STATE_START:
                 self.__syn_err("Statement outside of !PROGRAM directives")
@@ -305,7 +305,7 @@ class compile( object ):
                 ["Invalid variable name", "Expected '=', but found", "Invalid assigned value"]
             )
 
-            val = [stmt[3][T][1:-1].decode('string_escape')]
+            val = [stmt[3][T][1:-1]]  #.decode('string_escape')] TODO: check if this comment affects functionality
 
         # ---------------------------------------------------------------------
         elif re.search(r'^int$', stmt[0][T]):
@@ -847,11 +847,11 @@ class compile( object ):
         # it will be 1. Otherwise it's 0. Note that this is a soft error. Execution doesn't
         # halt when checks fails.
         #        
-        for reg, used in treg.iteritems():
+        for reg, used in treg.items():
             if not used:
                self.__sem_warn("Register '__r%d' is unused" % reg)
 
-        for var, used in tvar.iteritems():
+        for var, used in tvar.items():
             if not used:
                 self.__sem_warn("Variable '%s' is unused" % var)
 
@@ -1002,7 +1002,7 @@ class compile( object ):
                     if symbols:                     # if there are any tokens
 
                         # tokens are tuples (symbol, line number)
-                        tokens += zip(symbols, [self.__lineno]*len(symbols))
+                        tokens += list(zip(symbols, [self.__lineno]*len(symbols)))
 
                     self.__lineno = self.__lineno+1 # update line counter
 

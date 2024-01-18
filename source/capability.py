@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -34,7 +34,7 @@ import path as P
 import networkx as nx
 import textwrap
 import datetime
-import cPickle as pickle
+import pickle as pickle
 import math
 import numpy
 
@@ -158,7 +158,7 @@ class capability( object ):
 
                 return                              # your job is done here
 
-            except IOError, err:
+            except IOError as err:
                 # if you can't load it, simply re-calculate it ;)
 
                 error("Cannot load Capability Graph: %s" % str(err))
@@ -169,20 +169,20 @@ class capability( object ):
         # ---------------------------------------------------------------------       
         dbg_prnt(DBG_LVL_1, "Searching CFG for 'interesting' statements...")
 
-        nnodes  = len(nx.get_node_attributes(self.__cfg.graph, 'abstr').items())
+        nnodes  = len(list(nx.get_node_attributes(self.__cfg.graph, 'abstr').items()))
         counter = 1
         
         p = P._cfg_shortest_path(self.__cfg)
 
 
-        for node, abstr in nx.get_node_attributes(self.__cfg.graph,'abstr').iteritems():
+        for node, abstr in nx.get_node_attributes(self.__cfg.graph,'abstr').items():
             addr = node.addr
 
             dbg_prnt(DBG_LVL_3, "Analyzing block at 0x%x (%d/%d)..." % (addr, counter, nnodes))
         
 
             if options & CAP_REGSET:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
 
                     if data['type'] == 'concrete':
                         self.__add(addr, ty='regset', reg=reg, val=data['const'], mode='const',
@@ -193,13 +193,13 @@ class capability( object ):
           
 
             if options & CAP_REGMOD:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
                     if data['type'] == 'mod':                                               
                         self.__add(addr, ty='regmod', reg=reg, op=data['op'], val=data['const'])
 
 
             if options & CAP_MEMRD:
-                for reg, data in abstr['regwr'].iteritems():
+                for reg, data in abstr['regwr'].items():
                     if data['type'] == 'deref' and data['memrd']:
                         loadreg = data['deps'][0]
 
@@ -355,7 +355,7 @@ class capability( object ):
                 SPT.node[path[-1]].setdefault('uid', set()).add(v_)
 
                 # convert nodes [1,2,3,4], into edges [(1,2),(2,3),(3,4)] and add them to SPT
-                SPT.add_edges_from(zip(path, path[1:]), weight=1)
+                SPT.add_edges_from(list(zip(path, path[1:])), weight=1)
 
                 # color the intermediate nodes White (if they're not Black)
                 for p in path[1:-1]:
@@ -411,7 +411,7 @@ class capability( object ):
                 nx.write_gpickle(self.__cap, self.__name + '.cap')
                 dbg_prnt(DBG_LVL_1, "Done. Capability Graph saved as %s" % self.__name + '.cap')
 
-            except IOError, err:
+            except IOError as err:
                 error("Cannot save Capability Graph: %s" % str(err))
 
 
@@ -481,7 +481,7 @@ class capability( object ):
            
             dbg_prnt(DBG_LVL_1, "Done. Capability Graph saved as %s" % self.__name + '.stmt')
 
-        except IOError, err:
+        except IOError as err:
             error("Cannot create statements file: %s" % str(err))
 
 
@@ -523,7 +523,7 @@ class capability( object ):
 
             # get island as induced (directed) subgraph and relabel nodes in [0, order(G)-1] range
             graph   = self.__cap.subgraph(nodeset)    
-            relabel = dict(zip(graph.nodes(), range(graph.order())))
+            relabel = dict(list(zip(graph.nodes(), list(range(graph.order())))))
             graph   = nx.relabel_nodes(graph, relabel)
             
 
@@ -599,7 +599,7 @@ class capability( object ):
                 for island in self.__islands:       # perform the analysis to every island
                     func( island['graph'] )
 
-            except KeyError, err:
+            except KeyError as err:
                 fatal('Unknow analysis %s' % str(err))
 
 
@@ -642,7 +642,7 @@ class capability( object ):
 
                 func( self.__islands[ island_id ]['graph'] )
 
-            except KeyError, err:
+            except KeyError as err:
                 fatal('Unknow analysis %s' % str(err))
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -------------------------------------------------------------------------------------------------
 #
 #    ,ggggggggggg,     _,gggggg,_      ,ggggggggggg,      ,gggg,  
@@ -198,7 +198,7 @@ class output( object ):
             dbg_prnt(DBG_LVL_2, "Waiting for a second to prevent solutions with the same timestamp...")
             time.sleep(1)                           # prevent solutions with the same filename
             
-        except IOError, err:
+        except IOError as err:
             error("Cannot create output file: %s" % str(err))
 
 
